@@ -42,6 +42,14 @@ export class MunicipalityManagerService {
     return this.municipalities;
   }
 
+  /**
+   * Load municipalities from saved data
+   */
+  loadMunicipalities(savedMunicipalities: MunicipalityDefinition[], savedCounter: number): void {
+    this.municipalities = savedMunicipalities.map(m => ({ ...m })); // Deep copy
+    this.counter = savedCounter;
+  }
+
   addMunicipality(): MunicipalityDefinition {
     const baseColors = this.themeService.getMunicipalityColors();
     const baseColor = baseColors[(this.municipalities.length) % baseColors.length];

@@ -170,6 +170,13 @@ export class ThemeService {
     return this.isDarkMode ? this.darkTheme : this.lightTheme;
   }
 
+  /**
+   * Get current dark mode state
+   */
+  getIsDarkMode(): boolean {
+    return this.isDarkMode;
+  }
+
   private applyTheme(): void {
     // Only apply theme in browser environment
     if (!isPlatformBrowser(this.platformId)) return;

@@ -48,6 +48,15 @@ export class GridService {
     return this.grid;
   }
 
+  /**
+   * Load grid state from saved data
+   */
+  loadGrid(savedGrid: Tile[][]): void {
+    this.grid = savedGrid.map(row => 
+      row.map(tile => ({ ...tile })) // Deep copy to ensure fresh instances
+    );
+  }
+
   getTile(x: number, y: number): Tile | null {
     if (this.isValidPosition(x, y)) {
       return this.grid[y][x];

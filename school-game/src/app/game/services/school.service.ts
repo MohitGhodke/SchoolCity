@@ -124,4 +124,35 @@ export class SchoolService {
     this.schoolCounter = 0;
     this.gridService.resetGrid();
   }
+
+  /**
+   * Load schools from saved data
+   */
+  loadSchools(savedSchools: School[]): void {
+    this.schools.clear();
+    
+    // Find the highest school counter to resume from
+    let maxCounter = 0;
+    
+    savedSchools.forEach(school => {
+      // Restore Date object from string if necessary
+      if (typeof school.createdAt === 'string') {
+        school.createdAt = new Date(school.createdAt);
+      }
+      
+      this.schools.set(school.id, school);
+      
+      // Update grid to reflect school placement
+      this.gridService.placeSchool(school.position.x, school.position.y);
+      
+      // Extract counter from school ID (assuming format: school-N)
+      const match = school.id.match(/school-(\d+)/);
+      if (match) {
+        const counter = parseInt(match[1], 10);
+        maxCounter = Math.max(maxCounter, counter);
+      }
+    });
+    
+    this.schoolCounter = maxCounter;
+  }
 }

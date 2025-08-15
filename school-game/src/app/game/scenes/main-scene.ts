@@ -229,6 +229,11 @@ export class MainSceneFactory {
           // Re-render the game after painting
           this.gameStateService.renderGame();
           
+          // Auto-save after each paint action
+          if (typeof window !== 'undefined' && (window as any).autoSaveGame) {
+            (window as any).autoSaveGame();
+          }
+          
           // Notify Angular that button states may need updating
           if (typeof window !== 'undefined') {
             // Call both callback functions to ensure proper state refresh

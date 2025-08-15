@@ -8,6 +8,7 @@ import { GameEngineService, GameConfig } from './services/game-engine.service';
 import { GameStateService } from './services/game-state.service';
 import { RenderingService } from './services/rendering.service';
 import { ThemeService } from './services/theme.service';
+import { GameDataService } from './services/game-data.service';
 import { MainSceneFactory } from './scenes/main-scene';
 import { GameEventService } from './services/game-event.service';
 import { EducationHierarchyService } from './services/education-hierarchy.service';
@@ -26,6 +27,12 @@ import { GAME_CONSTANTS } from './constants/game-constants';
         </button>
         <button class="main-btn" (click)="zoomIn()" aria-label="Zoom In">
           <span class="material-icons-outlined">zoom_in</span>
+        </button>
+        <button class="main-btn save-btn" (click)="saveGame()" title="Save Game">
+          <span class="material-icons-outlined">save</span>
+        </button>
+        <button class="main-btn load-btn" (click)="loadGame()" [disabled]="!hasSavedData" title="Load Game">
+          <span class="material-icons-outlined">folder_open</span>
         </button>
         <button class="main-btn clean-slate-btn" (click)="onCleanSlate()">
           <span class="material-icons-outlined">cleaning_services</span>
@@ -59,6 +66,7 @@ import { GAME_CONSTANTS } from './constants/game-constants';
 export class GameComponent implements OnInit, OnDestroy {
   selectedSchool: any = null;
   selectedSchoolPos: { x: number, y: number } | null = null;
+  hasSavedData: boolean = false;
   private schoolClickedSubscription?: Subscription;
   private themeSubscription?: Subscription;
   // Handle click on the game grid to select a school
@@ -128,6 +136,7 @@ export class GameComponent implements OnInit, OnDestroy {
     private educationHierarchyService: EducationHierarchyService,
     private gameEventService: GameEventService,
     private themeService: ThemeService,
+    private gameDataService: GameDataService,
     private ngZone: NgZone,
     private cdRef: ChangeDetectorRef
   ) {}
@@ -188,12 +197,24 @@ export class GameComponent implements OnInit, OnDestroy {
     }
   async ngOnInit() {
     if (isPlatformBrowser(this.platformId)) {
+      // Check if there's saved game data
+      this.hasSavedData = this.gameDataService.hasSavedData();
+      
       // Apply initial theme
       this.themeService.getCurrentTheme();
       
       try {
         // Wait a bit for the container to be properly sized
         await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Try to load saved data first
+        if (this.hasSavedData) {
+          const loadSuccess = this.gameDataService.loadGameData();
+          if (loadSuccess) {
+            console.log('🎮 Loaded saved game data');
+          }
+        }
+        
         // Configure game
         const container = this.gameContainer.nativeElement;
         // Use full window size in browser
@@ -230,6 +251,13 @@ export class GameComponent implements OnInit, OnDestroy {
             // Force change detection by marking for check
             this.cdRef.markForCheck();
             this.cdRef.detectChanges();
+          });
+        };
+        
+        // Set up auto-save callback
+        (window as any).autoSaveGame = () => {
+          this.ngZone.run(() => {
+            this.saveGame();
           });
         };
         
@@ -309,6 +337,33 @@ export class GameComponent implements OnInit, OnDestroy {
     const municipalityManager = (this.renderingService as any).municipalityManager;
     if (municipalityManager) {
       municipalityManager.clearAll();
+    }
+    // Auto-save after clean slate
+    this.saveGame();
+  }
+
+  saveGame() {
+    const success = this.gameDataService.saveGameData();
+    if (success) {
+      this.hasSavedData = true;
+      console.log('✅ Game saved successfully');
+      // You could show a toast notification here
+    } else {
+      console.error('❌ Failed to save game');
+      // You could show an error message here
+    }
+  }
+
+  loadGame() {
+    const success = this.gameDataService.loadGameData();
+    if (success) {
+      // Re-render the game after loading
+      this.gameStateService.renderGame();
+      console.log('✅ Game loaded successfully');
+      // You could show a toast notification here
+    } else {
+      console.error('❌ Failed to load game');
+      // You could show an error message here
     }
   }
 }
