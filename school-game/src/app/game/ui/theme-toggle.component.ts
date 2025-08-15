@@ -12,8 +12,8 @@ import { ThemeService } from '../services/theme.service';
       (click)="toggleTheme()"
       [attr.aria-label]="(isDarkMode$ | async) ? 'Switch to light mode' : 'Switch to dark mode'"
       title="Toggle theme">
-      <span class="toggle-icon">
-        {{ (isDarkMode$ | async) ? '☀️' : '🌙' }}
+      <span class="material-icons-outlined toggle-icon">
+        {{ (isDarkMode$ | async) ? 'light_mode' : 'dark_mode' }}
       </span>
     </button>
   `,
@@ -46,12 +46,13 @@ import { ThemeService } from '../services/theme.service';
     }
 
     .toggle-icon {
-      filter: grayscale(20%);
-      transition: filter 0.2s ease;
+      font-size: 20px;
+      line-height: 1;
+      transition: transform 0.3s ease;
     }
 
     .theme-toggle:hover .toggle-icon {
-      filter: grayscale(0%);
+      transform: scale(1.1);
     }
 
     @media (max-width: 768px) {

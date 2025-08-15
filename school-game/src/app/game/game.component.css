@@ -107,6 +107,15 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   position: relative;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.main-btn .material-icons-outlined {
+  font-size: 18px;
+  line-height: 1;
 }
 
 .main-btn:hover {
@@ -266,6 +275,10 @@
     padding: 7px 12px;
   }
   
+  .main-btn .material-icons-outlined {
+    font-size: 16px;
+  }
+  
   .school-info-modal {
     min-width: 320px !important;
   }
@@ -296,6 +309,10 @@
   .main-btn {
     font-size: 12px;
     padding: 6px 10px;
+  }
+  
+  .main-btn .material-icons-outlined {
+    font-size: 14px;
   }
   
   .school-info-modal {

@@ -15,7 +15,7 @@ import { MunicipalityManagerService } from '../services/municipality-manager.ser
                 (click)="setPaintMode('municipality')"
                 (dblclick)="startNewMunicipality()"
                 title="Paint Municipality (Double-click to start new municipality)">
-          🏛️
+          <span class="material-icons-outlined">location_city</span>
           <span>Municipality</span>
         </button>
         
@@ -24,7 +24,7 @@ import { MunicipalityManagerService } from '../services/municipality-manager.ser
                 (click)="setPaintMode('area')"
                 [disabled]="!hasAnyMunicipality()"
                 title="Paint Area">
-          📍
+          <span class="material-icons-outlined">map</span>
           <span>Area</span>
         </button>
         
@@ -33,7 +33,7 @@ import { MunicipalityManagerService } from '../services/municipality-manager.ser
                 (click)="setPaintMode('unit')"
                 [disabled]="!hasAnyArea()"
                 title="Paint Unit">
-          🏘️
+          <span class="material-icons-outlined">domain</span>
           <span>Unit</span>
         </button>
         
@@ -42,7 +42,7 @@ import { MunicipalityManagerService } from '../services/municipality-manager.ser
                 (click)="setPaintMode('school')"
                 [disabled]="!hasAnyUnit()"
                 title="Place School">
-          🏫
+          <span class="material-icons-outlined">school</span>
           <span>School</span>
         </button>
         
@@ -51,7 +51,7 @@ import { MunicipalityManagerService } from '../services/municipality-manager.ser
                 [class.active]="paintMode === 'clear'"
                 (click)="setPaintMode('clear')"
                 title="Erase">
-          🧹
+          <span class="material-icons-outlined">backspace</span>
           <span>Erase</span>
         </button>
       </div>
@@ -424,11 +424,11 @@ export class BoundarySelectorComponent {
 
   getPaintModeLabel(): string {
     switch (this.paintMode) {
-      case 'municipality': return '🏛️ Municipality Brush';
-      case 'area': return '📍 Area Brush';
-      case 'unit': return '🏘️ Unit Brush';
-      case 'school': return '🏫 School Placer';
-      case 'clear': return '🧹 Eraser';
+      case 'municipality': return 'Municipality Brush';
+      case 'area': return 'Area Brush';
+      case 'unit': return 'Unit Brush';
+      case 'school': return 'School Placer';
+      case 'clear': return 'Eraser';
       default: return 'Select a tool';
     }
   }

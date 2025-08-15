@@ -21,9 +21,16 @@ import { GAME_CONSTANTS } from './constants/game-constants';
     <!-- Top control bar with utilities and theme toggle -->
     <div class="control-bar">
       <div class="control-group">
-        <button class="main-btn" (click)="zoomOut()" aria-label="Zoom Out">🔍−</button>
-        <button class="main-btn" (click)="zoomIn()" aria-label="Zoom In">🔍+</button>
-        <button class="main-btn clean-slate-btn" (click)="onCleanSlate()">🧹 Clean Slate</button>
+        <button class="main-btn" (click)="zoomOut()" aria-label="Zoom Out">
+          <span class="material-icons-outlined">zoom_out</span>
+        </button>
+        <button class="main-btn" (click)="zoomIn()" aria-label="Zoom In">
+          <span class="material-icons-outlined">zoom_in</span>
+        </button>
+        <button class="main-btn clean-slate-btn" (click)="onCleanSlate()">
+          <span class="material-icons-outlined">cleaning_services</span>
+          Clean Slate
+        </button>
       </div>
       <app-theme-toggle></app-theme-toggle>
     </div>
