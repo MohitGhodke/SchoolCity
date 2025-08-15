@@ -1,11 +1,13 @@
 
-import { Component, ElementRef, OnInit, ViewChild, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, ElementRef, OnInit, OnDestroy, ViewChild, Inject, PLATFORM_ID, NgZone, ChangeDetectorRef } from '@angular/core';
 import { isPlatformBrowser, CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
 import { BoundarySelectorComponent } from './ui/boundary-selector.component';
 import { GameEngineService, GameConfig } from './services/game-engine.service';
 import { GameStateService } from './services/game-state.service';
 import { RenderingService } from './services/rendering.service';
 import { MainSceneFactory } from './scenes/main-scene';
+import { GameEventService } from './services/game-event.service';
 import { EducationHierarchyService } from './services/education-hierarchy.service';
 import { GAME_CONSTANTS } from './constants/game-constants';
 
@@ -20,11 +22,80 @@ import { GAME_CONSTANTS } from './constants/game-constants';
       <button class="main-btn" (click)="zoomIn()" aria-label="Zoom In">+</button>
       <button class="main-btn" (click)="onCleanSlate()">Clean Slate</button>
     </div>
+
+    <!-- School Info Modal -->
+    <div class="school-info-modal" [class.modal-hidden]="!selectedSchool">
+      <h3>{{ selectedSchool?.name || 'No School' }}</h3>
+      <p>Students: {{ selectedSchool?.currentStudents || 0 }} / {{ selectedSchool?.capacity || 0 }}</p>
+      <button (click)="addStudent()" [disabled]="!selectedSchool">Add Student</button>
+      <button (click)="removeStudent()" [disabled]="!selectedSchool || selectedSchool.currentStudents === 0">Remove Student</button>
+      <button (click)="removeSchool()" [disabled]="!selectedSchool">Remove School</button>
+      <button (click)="closeSchoolInfo()">Close</button>
+    </div>
+
     <div id="gameContainer" #gameContainer></div>
   `,
   styleUrls: ['./game.component.css']
 })
-export class GameComponent implements OnInit {
+export class GameComponent implements OnInit, OnDestroy {
+  selectedSchool: any = null;
+  selectedSchoolPos: { x: number, y: number } | null = null;
+  private schoolClickedSubscription?: Subscription;
+  // Handle click on the game grid to select a school
+  onGameContainerClick(event: MouseEvent) {
+    // Get click position relative to the canvas
+    const rect = this.gameContainer.nativeElement.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    // Convert to grid position
+    const gridPos = this.renderingService.screenToGrid(x, y);
+    // Check if a school exists at this position
+    if (this.gameStateService && this.gameStateService.isGameActive()) {
+      const school = this.gameStateService["schoolService"].getSchoolAtPosition(gridPos.x, gridPos.y);
+      if (school) {
+        this.selectedSchool = { ...school };
+        this.selectedSchoolPos = { x: gridPos.x, y: gridPos.y };
+      } else {
+        this.selectedSchool = null;
+        this.selectedSchoolPos = null;
+      }
+    }
+  }
+
+  addStudent() {
+    if (this.selectedSchool) {
+      const ok = this.gameStateService["schoolService"].addStudents(this.selectedSchool.id, 1);
+      if (ok) {
+        this.selectedSchool.currentStudents++;
+        this.gameStateService.renderGame();
+      }
+    }
+  }
+
+  removeStudent() {
+    if (this.selectedSchool && this.selectedSchool.currentStudents > 0) {
+      const ok = this.gameStateService["schoolService"].removeStudents(this.selectedSchool.id, 1);
+      if (ok) {
+        this.selectedSchool.currentStudents--;
+        this.gameStateService.renderGame();
+      }
+    }
+  }
+
+  removeSchool() {
+    if (this.selectedSchoolPos) {
+      this.gameStateService["schoolService"].removeSchool(this.selectedSchoolPos.x, this.selectedSchoolPos.y);
+      this.selectedSchool = null;
+      this.selectedSchoolPos = null;
+      this.gameStateService.renderGame();
+    }
+  }
+
+  closeSchoolInfo() {
+    this.selectedSchool = null;
+    this.selectedSchoolPos = null;
+    this.cdRef.detectChanges();
+  }
   private lastTouchDist: number | null = null;
   selectedBoundary: string | null = null;
   @ViewChild('gameContainer', { static: true }) gameContainer!: ElementRef;
@@ -34,7 +105,10 @@ export class GameComponent implements OnInit {
     private gameEngineService: GameEngineService,
     private gameStateService: GameStateService,
     private renderingService: RenderingService,
-    private educationHierarchyService: EducationHierarchyService
+    private educationHierarchyService: EducationHierarchyService,
+    private gameEventService: GameEventService,
+    private ngZone: NgZone,
+    private cdRef: ChangeDetectorRef
   ) {}
 
   // Mouse wheel zoom handler
@@ -107,7 +181,7 @@ export class GameComponent implements OnInit {
           backgroundColor: GAME_CONSTANTS.GAME.BACKGROUND_COLOR
         };
         // Create scene factory function
-        const sceneFactory = MainSceneFactory.createScene(this.gameStateService, this.renderingService, this.educationHierarchyService);
+  const sceneFactory = MainSceneFactory.createScene(this.gameStateService, this.renderingService, this.educationHierarchyService, this.gameEventService);
         // Initialize game with the scene factory
         await this.gameEngineService.initializeGame(
           container,
@@ -124,8 +198,20 @@ export class GameComponent implements OnInit {
         container.addEventListener('touchstart', this.onTouchStart, { passive: false });
         container.addEventListener('touchmove', this.onTouchMove, { passive: false });
         container.addEventListener('touchend', this.onTouchEnd, { passive: false });
-  // Add mouse wheel zoom support
-  container.addEventListener('wheel', this.onWheel.bind(this), { passive: false });
+        // Add mouse wheel zoom support
+        container.addEventListener('wheel', this.onWheel.bind(this), { passive: false });
+
+        // Listen for school tile clicks from Phaser scene via GameEventService
+        this.schoolClickedSubscription = this.gameEventService.schoolClicked$.subscribe((school: any) => {
+          this.ngZone.run(() => {
+            this.selectedSchool = { ...school };
+            this.selectedSchoolPos = { x: school.x, y: school.y };
+            this.cdRef.markForCheck();
+            this.cdRef.detectChanges();
+            // Double-check: force another detection cycle
+            setTimeout(() => this.cdRef.detectChanges(), 0);
+          });
+        });
       } catch (error) {
         // (Error logging removed)
       }
@@ -135,6 +221,10 @@ export class GameComponent implements OnInit {
 
 
   ngOnDestroy() {
+    // Unsubscribe from school click events to prevent memory leaks and duplicate subscriptions
+    if (this.schoolClickedSubscription) {
+      this.schoolClickedSubscription.unsubscribe();
+    }
     this.gameEngineService.destroyGame();
   }
 

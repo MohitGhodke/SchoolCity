@@ -1,12 +1,14 @@
 import { GameStateService } from '../services/game-state.service';
 import { RenderingService } from '../services/rendering.service';
 import { EducationHierarchyService } from '../services/education-hierarchy.service';
+import { GameEventService } from '../services/game-event.service';
 
 export class MainSceneFactory {
-  static createScene(gameStateService: GameStateService, renderingService: RenderingService, educationHierarchyService: EducationHierarchyService): any {
+  static createScene(gameStateService: GameStateService, renderingService: RenderingService, educationHierarchyService: EducationHierarchyService, gameEventService: GameEventService): any {
     // Return a function that will create the scene class when called
     return function(Phaser: any) {
       return class extends Phaser.Scene {
+        private gameEventService: GameEventService;
         private graphics: any;
         private gameStateService: GameStateService;
         private renderingService: RenderingService;
@@ -20,6 +22,7 @@ export class MainSceneFactory {
           this.gameStateService = gameStateService;
           this.renderingService = renderingService;
           this.educationHierarchyService = educationHierarchyService;
+          this.gameEventService = gameEventService;
         }
 
         create(): void {
@@ -51,7 +54,15 @@ export class MainSceneFactory {
               this.isSelecting = true;
               this.assignBoundaryAt(pointer.x, pointer.y);
             } else {
-              this.gameStateService.handleTileClick(pointer.x, pointer.y);
+              // Custom: Notify Angular if a school is clicked
+              const { x, y } = this.renderingService.screenToGrid(pointer.x, pointer.y);
+              const school = this.gameStateService["schoolService"].getSchoolAtPosition(x, y);
+              if (school && this.gameEventService) {
+                console.log('[Phaser] School tile clicked:', { ...school, x, y });
+                this.gameEventService.schoolClicked$.next({ ...school, x, y });
+              } else {
+                this.gameStateService.handleTileClick(pointer.x, pointer.y);
+              }
             }
           });
           (this as any)['input'].on('pointermove', (pointer: any) => {

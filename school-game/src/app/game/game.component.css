@@ -1,3 +1,50 @@
+/* School Info Modal Styles */
+::ng-deep .school-info-modal {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  background: #fff !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 32px 0 rgba(60,60,60,0.18) !important;
+  padding: 32px 40px 24px 40px !important;
+  z-index: 9999 !important;
+  min-width: 320px !important;
+  max-width: 90vw !important;
+  min-height: 120px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 18px !important;
+}
+
+::ng-deep .school-info-modal.modal-hidden {
+  display: none !important;
+}
+.school-info-modal h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+.school-info-modal p {
+  margin: 0 0 16px 0;
+  font-size: 1.1rem;
+}
+.school-info-modal button {
+  margin: 4px 0;
+  min-width: 140px;
+  font-size: 1rem;
+  padding: 8px 0;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  background: #f7f7f7;
+  color: #333;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.school-info-modal button:hover {
+  background: #f0f0f0;
+}
 /* Game component styles */
 
 
