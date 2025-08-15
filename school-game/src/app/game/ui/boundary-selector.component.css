@@ -20,10 +20,10 @@
 .boundary-btn.selected {
   border: 2px solid #333;
 }
-.boundary-btn.municipality-1 { background: #cfc6b8; }
-.boundary-btn.municipality-2 { background: #a7bfa4; }
-.boundary-btn.area-1 { background: #dbeac6; }
-.boundary-btn.area-2 { background: #b7c7a4; }
-.boundary-btn.unit-1 { background: #e7e1cb; }
-.boundary-btn.unit-2 { background: #8b7b6b; color: #fff; }
+.boundary-btn.municipality-1 { background: #e3e6ea; }
+.boundary-btn.municipality-2 { background: #b7d6e6; }
+.boundary-btn.area-1 { background: #d6e7cb; }
+.boundary-btn.area-2 { background: #b7d6a3; }
+.boundary-btn.unit-1 { background: #ffe066; }
+.boundary-btn.unit-2 { background: #f7b267; }
 .boundary-btn.school { background: #fff; }

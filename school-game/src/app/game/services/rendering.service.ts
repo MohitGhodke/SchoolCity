@@ -1,5 +1,6 @@
 
 
+
 import { Injectable } from '@angular/core';
 import { GAME_CONSTANTS } from '../constants/game-constants';
 import { Tile } from './grid.service';
@@ -11,12 +12,22 @@ export interface RenderConfig {
   mapOffsetY: number;
 }
 
+
 @Injectable({
   providedIn: 'root'
 })
 export class RenderingService {
   private graphics: any = null;
   private config: RenderConfig;
+  private zoom: number = 1;
+
+  setZoom(zoom: number) {
+    this.zoom = Math.max(0.5, Math.min(zoom, 2)); // Clamp between 0.5x and 2x
+  }
+
+  getZoom(): number {
+    return this.zoom;
+  }
 
 
 
@@ -76,13 +87,21 @@ export class RenderingService {
     }
 
     const { sx, sy } = this.gridToScreen(x, y);
+    const z = this.zoom;
+    // Manually scale positions and sizes for zoom
+    const centerX = sx;
+    const centerY = sy;
+    const halfTileW = (this.config.tileWidth / 2) * z;
+    const halfTileH = (this.config.tileHeight / 2) * z;
+    const tileH = this.config.tileHeight * z;
+
     this.graphics.lineStyle(1, borderColor, 1);
     this.graphics.fillStyle(fillColor, 1);
     this.graphics.beginPath();
-    this.graphics.moveTo(sx, sy);
-    this.graphics.lineTo(sx + this.config.tileWidth / 2, sy + this.config.tileHeight / 2);
-    this.graphics.lineTo(sx, sy + this.config.tileHeight);
-    this.graphics.lineTo(sx - this.config.tileWidth / 2, sy + this.config.tileHeight / 2);
+    this.graphics.moveTo(centerX, centerY);
+    this.graphics.lineTo(centerX + halfTileW, centerY + halfTileH);
+    this.graphics.lineTo(centerX, centerY + tileH);
+    this.graphics.lineTo(centerX - halfTileW, centerY + halfTileH);
     this.graphics.closePath();
     this.graphics.fillPath();
     this.graphics.strokePath();
@@ -92,44 +111,59 @@ export class RenderingService {
   if (!this.graphics) return;
 
   const { sx, sy } = this.gridToScreen(x, y);
+  const z = this.zoom;
+  // Manually scale positions and sizes for zoom
   const ox = sx;
-  const oy = sy + this.config.tileHeight / 2;
+  const oy = sy + (this.config.tileHeight / 2) * z;
 
   // Roof - draw as a rectangle using lines and fill
   this.graphics.fillStyle(GAME_CONSTANTS.COLORS.SCHOOL_ROOF, 1);
   this.graphics.beginPath();
-  this.graphics.moveTo(ox - 12, oy - 24);
-  this.graphics.lineTo(ox + 12, oy - 24);
-  this.graphics.lineTo(ox + 12, oy - 12);
-  this.graphics.lineTo(ox - 12, oy - 12);
+  this.graphics.moveTo(ox - 12 * z, oy - 24 * z);
+  this.graphics.lineTo(ox + 12 * z, oy - 24 * z);
+  this.graphics.lineTo(ox + 12 * z, oy - 12 * z);
+  this.graphics.lineTo(ox - 12 * z, oy - 12 * z);
   this.graphics.closePath();
   this.graphics.fillPath();
 
   // Building - draw as a rectangle using lines and fill
   this.graphics.fillStyle(GAME_CONSTANTS.COLORS.SCHOOL_BUILDING, 1);
   this.graphics.beginPath();
-  this.graphics.moveTo(ox - 12, oy - 12);
-  this.graphics.lineTo(ox + 12, oy - 12);
-  this.graphics.lineTo(ox + 12, oy + 12);
-  this.graphics.lineTo(ox - 12, oy + 12);
+  this.graphics.moveTo(ox - 12 * z, oy - 12 * z);
+  this.graphics.lineTo(ox + 12 * z, oy - 12 * z);
+  this.graphics.lineTo(ox + 12 * z, oy + 12 * z);
+  this.graphics.lineTo(ox - 12 * z, oy + 12 * z);
   this.graphics.closePath();
   this.graphics.fillPath();
 
   // Door - draw as a rectangle using lines and fill
   this.graphics.fillStyle(GAME_CONSTANTS.COLORS.SCHOOL_DOOR, 1);
   this.graphics.beginPath();
-  this.graphics.moveTo(ox - 3, oy);
-  this.graphics.lineTo(ox + 3, oy);
-  this.graphics.lineTo(ox + 3, oy + 12);
-  this.graphics.lineTo(ox - 3, oy + 12);
+  this.graphics.moveTo(ox - 3 * z, oy);
+  this.graphics.lineTo(ox + 3 * z, oy);
+  this.graphics.lineTo(ox + 3 * z, oy + 12 * z);
+  this.graphics.lineTo(ox - 3 * z, oy + 12 * z);
   this.graphics.closePath();
   this.graphics.fillPath();
   }
 
   gridToScreen(x: number, y: number): { sx: number; sy: number } {
+    // Apply zoom to grid position so the whole grid scales from the center
+    const z = this.zoom;
+    // Center of the grid (for scaling around center)
+    const gridSize = GAME_CONSTANTS.GRID.SIZE;
+    const centerX = (gridSize - 1) / 2;
+    const centerY = (gridSize - 1) / 2;
+    // Calculate unscaled position
+    const baseX = this.config.mapOffsetX + (x - y) * (this.config.tileWidth / 2);
+    const baseY = this.config.mapOffsetY + (x + y) * (this.config.tileHeight / 2);
+    // Calculate center position
+    const centerBaseX = this.config.mapOffsetX + (centerX - centerY) * (this.config.tileWidth / 2);
+    const centerBaseY = this.config.mapOffsetY + (centerX + centerY) * (this.config.tileHeight / 2);
+    // Scale position around the center
     return {
-      sx: this.config.mapOffsetX + (x - y) * (this.config.tileWidth / 2),
-      sy: this.config.mapOffsetY + (x + y) * (this.config.tileHeight / 2)
+      sx: centerBaseX + (baseX - centerBaseX) * z,
+      sy: centerBaseY + (baseY - centerBaseY) * z
     };
   }
 

@@ -7,18 +7,18 @@ export const GAME_CONSTANTS = {
     OFFSET_Y: 100
   },
   COLORS: {
-  TILE_FILL: 0xd3ccb8,      // Slightly darker beige for visible grid
-    TILE_BORDER: 0xcfc6b8,    // Muted beige (tile border)
-    SCHOOL_ROOF: 0x8b7b6b,    // Brown roof
-    SCHOOL_BUILDING: 0xdbeac6, // Light green building
-    SCHOOL_DOOR: 0x9e4b3c,    // Red door
-    // Boundary colors (soft, muted, natural)
-    MUNICIPALITY_1: 0xcfc6b8, // Beige
-    MUNICIPALITY_2: 0xa7bfa4, // Muted green
-    AREA_1: 0xdbeac6,         // Light green
-    AREA_2: 0xb7c7a4,         // Muted olive
-    UNIT_1: 0xe7e1cb,         // Soft sand
-    UNIT_2: 0x8b7b6b          // Brown
+  TILE_FILL: 0xe3f6fc,      // Pastel blue (ground)
+  TILE_BORDER: 0xb5d0e6,    // Muted blue border
+  SCHOOL_ROOF: 0xf7b267,    // Pastel orange (roof)
+  SCHOOL_BUILDING: 0xb7d6e6, // Pastel blue (building)
+  SCHOOL_DOOR: 0xe57373,    // Pastel red (door)
+  // Boundary colors (fresh, minimal, pastel)
+  MUNICIPALITY_1: 0xe3e6ea, // Light gray
+  MUNICIPALITY_2: 0xb7d6e6, // Pastel blue
+  AREA_1: 0xd6e7cb,         // Light green
+  AREA_2: 0xb7d6a3,         // Muted green
+  UNIT_1: 0xffe066,         // Pastel yellow
+  UNIT_2: 0xf7b267          // Pastel orange
   },
   SCHOOL: {
     DEFAULT_CAPACITY: 100,
@@ -28,6 +28,6 @@ export const GAME_CONSTANTS = {
   GAME: {
     WIDTH: 900, // Default, will be overridden in browser
     HEIGHT: 600,
-    BACKGROUND_COLOR: '#e7e1cb'
+  BACKGROUND_COLOR: '#f7f7f5'
   }
 } as const;

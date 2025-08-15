@@ -25,12 +25,13 @@
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   z-index: 100;
-  background: rgba(231, 225, 203, 0.95);
-  border-radius: 16px;
-  padding: 12px 24px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  background: rgba(252, 252, 252, 0.92); /* very light, almost white */
+  border-radius: 18px;
+  padding: 16px 32px;
+  box-shadow: 0 4px 24px 0 rgba(60,60,60,0.07);
+  border: 1px solid #f0f0f0;
 }
 
 #gameContainer {
@@ -65,16 +66,16 @@
   font-size: 1rem;
   padding: 8px 18px;
   border-radius: 8px;
-  border: none;
+  border: 1px solid #e0e0e0;
   margin: 0 2px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  box-shadow: none;
   cursor: pointer;
   transition: background 0.2s, box-shadow 0.2s, border 0.2s;
   outline: none;
   min-width: 120px !important;
   max-width: 140px !important;
   font-weight: 500;
-  background: #ede5d2;
+  background: #fcfcfc;
   color: #333;
   text-align: center;
 }

@@ -32,12 +32,12 @@ export class BoundarySelectorComponent {
   selected: string | null = null;
 
   boundaryOptions: BoundaryOption[] = [
-    { id: 'municipality-1', label: 'Municipality 1', color: '#cfc6b8' },
-    { id: 'municipality-2', label: 'Municipality 2', color: '#a7bfa4' },
-    { id: 'area-1', label: 'Area 1', color: '#dbeac6' },
-    { id: 'area-2', label: 'Area 2', color: '#b7c7a4' },
-    { id: 'unit-1', label: 'Unit 1', color: '#e7e1cb' },
-    { id: 'unit-2', label: 'Unit 2', color: '#8b7b6b' }
+    { id: 'municipality-1', label: 'Municipality 1', color: '#e3e6ea' }, // matches GAME_CONSTANTS.COLORS.MUNICIPALITY_1
+    { id: 'municipality-2', label: 'Municipality 2', color: '#b7d6e6' }, // matches GAME_CONSTANTS.COLORS.MUNICIPALITY_2
+    { id: 'area-1', label: 'Area 1', color: '#d6e7cb' }, // matches GAME_CONSTANTS.COLORS.AREA_1
+    { id: 'area-2', label: 'Area 2', color: '#b7d6a3' }, // matches GAME_CONSTANTS.COLORS.AREA_2
+    { id: 'unit-1', label: 'Unit 1', color: '#ffe066' }, // matches GAME_CONSTANTS.COLORS.UNIT_1
+    { id: 'unit-2', label: 'Unit 2', color: '#f7b267' }  // matches GAME_CONSTANTS.COLORS.UNIT_2
   ];
 
   select(id: string) {
