@@ -1,0 +1,29 @@
+/* Consistent button width and color for boundary selector */
+.boundary-btn {
+  min-width: 120px;
+  max-width: 140px;
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  margin: 0 2px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, border 0.2s;
+  outline: none;
+  font-weight: 500;
+  color: #333;
+  text-align: center;
+  background: #ede5d2;
+}
+.boundary-btn.selected {
+  border: 2px solid #333;
+}
+.boundary-btn.municipality-1 { background: #cfc6b8; }
+.boundary-btn.municipality-2 { background: #a7bfa4; }
+.boundary-btn.area-1 { background: #dbeac6; }
+.boundary-btn.area-2 { background: #b7c7a4; }
+.boundary-btn.unit-1 { background: #e7e1cb; }
+.boundary-btn.unit-2 { background: #8b7b6b; color: #fff; }
+.boundary-btn.school { background: #fff; }

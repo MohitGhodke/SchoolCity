@@ -1,0 +1,145 @@
+
+
+import { Injectable } from '@angular/core';
+import { GAME_CONSTANTS } from '../constants/game-constants';
+import { Tile } from './grid.service';
+
+export interface RenderConfig {
+  tileWidth: number;
+  tileHeight: number;
+  mapOffsetX: number;
+  mapOffsetY: number;
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class RenderingService {
+  private graphics: any = null;
+  private config: RenderConfig;
+
+
+
+  constructor() {
+    this.config = {
+      tileWidth: GAME_CONSTANTS.GRID.TILE_WIDTH,
+      tileHeight: GAME_CONSTANTS.GRID.TILE_HEIGHT,
+      mapOffsetX: GAME_CONSTANTS.GRID.OFFSET_X,
+      mapOffsetY: GAME_CONSTANTS.GRID.OFFSET_Y
+    };
+  }
+
+  /**
+   * Center the grid in the canvas based on canvas size and grid size.
+   */
+  centerGrid(canvasWidth: number, canvasHeight: number, gridSize?: number) {
+    const size = gridSize ?? GAME_CONSTANTS.GRID.SIZE;
+    const gridPixelWidth = size * this.config.tileWidth;
+    const gridPixelHeight = size * (this.config.tileHeight / 2);
+    this.setConfig({
+      mapOffsetX: Math.floor((canvasWidth - gridPixelWidth) / 2 + gridPixelWidth / 2),
+      mapOffsetY: Math.floor((canvasHeight - gridPixelHeight) / 2)
+    });
+  }
+
+  setGraphics(graphics: any): void {
+    this.graphics = graphics;
+  }
+
+  setConfig(config: Partial<RenderConfig>): void {
+    this.config = { ...this.config, ...config };
+  }
+
+  getConfig(): RenderConfig {
+    return { ...this.config };
+  }
+
+  clearGraphics(): void {
+    if (this.graphics) {
+      this.graphics.clear();
+    }
+  }
+
+  drawTile(x: number, y: number, color: number, borderColor: number, tile?: Tile): void {
+    if (!this.graphics) return;
+
+    // Use the most specific boundary color: unit > area > municipality
+    let fillColor = color;
+    if (tile) {
+      if (tile.unitId === 'unit-1') fillColor = GAME_CONSTANTS.COLORS.UNIT_1;
+      else if (tile.unitId === 'unit-2') fillColor = GAME_CONSTANTS.COLORS.UNIT_2;
+      else if (tile.areaId === 'area-1') fillColor = GAME_CONSTANTS.COLORS.AREA_1;
+      else if (tile.areaId === 'area-2') fillColor = GAME_CONSTANTS.COLORS.AREA_2;
+      else if (tile.municipalityId === 'municipality-1') fillColor = GAME_CONSTANTS.COLORS.MUNICIPALITY_1;
+      else if (tile.municipalityId === 'municipality-2') fillColor = GAME_CONSTANTS.COLORS.MUNICIPALITY_2;
+      else fillColor = GAME_CONSTANTS.COLORS.TILE_FILL; // Always use default if no boundary
+    }
+
+    const { sx, sy } = this.gridToScreen(x, y);
+    this.graphics.lineStyle(1, borderColor, 1);
+    this.graphics.fillStyle(fillColor, 1);
+    this.graphics.beginPath();
+    this.graphics.moveTo(sx, sy);
+    this.graphics.lineTo(sx + this.config.tileWidth / 2, sy + this.config.tileHeight / 2);
+    this.graphics.lineTo(sx, sy + this.config.tileHeight);
+    this.graphics.lineTo(sx - this.config.tileWidth / 2, sy + this.config.tileHeight / 2);
+    this.graphics.closePath();
+    this.graphics.fillPath();
+    this.graphics.strokePath();
+  }
+
+  drawSchool(x: number, y: number): void {
+  if (!this.graphics) return;
+
+  const { sx, sy } = this.gridToScreen(x, y);
+  const ox = sx;
+  const oy = sy + this.config.tileHeight / 2;
+
+  // Roof - draw as a rectangle using lines and fill
+  this.graphics.fillStyle(GAME_CONSTANTS.COLORS.SCHOOL_ROOF, 1);
+  this.graphics.beginPath();
+  this.graphics.moveTo(ox - 12, oy - 24);
+  this.graphics.lineTo(ox + 12, oy - 24);
+  this.graphics.lineTo(ox + 12, oy - 12);
+  this.graphics.lineTo(ox - 12, oy - 12);
+  this.graphics.closePath();
+  this.graphics.fillPath();
+
+  // Building - draw as a rectangle using lines and fill
+  this.graphics.fillStyle(GAME_CONSTANTS.COLORS.SCHOOL_BUILDING, 1);
+  this.graphics.beginPath();
+  this.graphics.moveTo(ox - 12, oy - 12);
+  this.graphics.lineTo(ox + 12, oy - 12);
+  this.graphics.lineTo(ox + 12, oy + 12);
+  this.graphics.lineTo(ox - 12, oy + 12);
+  this.graphics.closePath();
+  this.graphics.fillPath();
+
+  // Door - draw as a rectangle using lines and fill
+  this.graphics.fillStyle(GAME_CONSTANTS.COLORS.SCHOOL_DOOR, 1);
+  this.graphics.beginPath();
+  this.graphics.moveTo(ox - 3, oy);
+  this.graphics.lineTo(ox + 3, oy);
+  this.graphics.lineTo(ox + 3, oy + 12);
+  this.graphics.lineTo(ox - 3, oy + 12);
+  this.graphics.closePath();
+  this.graphics.fillPath();
+  }
+
+  gridToScreen(x: number, y: number): { sx: number; sy: number } {
+    return {
+      sx: this.config.mapOffsetX + (x - y) * (this.config.tileWidth / 2),
+      sy: this.config.mapOffsetY + (x + y) * (this.config.tileHeight / 2)
+    };
+  }
+
+  screenToGrid(sx: number, sy: number): { x: number; y: number } {
+    sx -= this.config.mapOffsetX;
+    sy -= this.config.mapOffsetY;
+    
+    const x = Math.floor((sx / (this.config.tileWidth / 2) + sy / (this.config.tileHeight / 2)) / 2);
+    const y = Math.floor((sy / (this.config.tileHeight / 2) - sx / (this.config.tileWidth / 2)) / 2);
+    
+    return { x, y };
+  }
+}
