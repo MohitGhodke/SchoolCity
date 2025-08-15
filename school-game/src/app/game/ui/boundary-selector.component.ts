@@ -1,5 +1,5 @@
-import { Component, EventEmitter, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Output, ChangeDetectorRef, NgZone, Inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { MunicipalityManagerService } from '../services/municipality-manager.service';
 
 @Component({
@@ -7,77 +7,59 @@ import { MunicipalityManagerService } from '../services/municipality-manager.ser
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="toolbar-container">
-      <!-- Current Mode Indicator -->
-      <div class="mode-indicator">
-        <span class="mode-label">{{ getModeLabel() }}</span>
-        <button class="clear-btn" (click)="clearSelection()" *ngIf="selected">Clear</button>
+    <div class="paint-toolbar">
+      <div class="tool-set">
+        <!-- Paint Tools -->
+        <button class="paint-tool municipality-tool" 
+                [class.active]="paintMode === 'municipality'"
+                (click)="setPaintMode('municipality')"
+                (dblclick)="startNewMunicipality()"
+                title="Paint Municipality (Double-click to start new municipality)">
+          🏛️
+          <span>Municipality</span>
+        </button>
+        
+        <button class="paint-tool area-tool" 
+                [class.active]="paintMode === 'area'"
+                (click)="setPaintMode('area')"
+                [disabled]="!hasAnyMunicipality()"
+                title="Paint Area">
+          📍
+          <span>Area</span>
+        </button>
+        
+        <button class="paint-tool unit-tool" 
+                [class.active]="paintMode === 'unit'"
+                (click)="setPaintMode('unit')"
+                [disabled]="!hasAnyArea()"
+                title="Paint Unit">
+          🏘️
+          <span>Unit</span>
+        </button>
+        
+        <button class="paint-tool school-tool" 
+                [class.active]="paintMode === 'school'"
+                (click)="setPaintMode('school')"
+                [disabled]="!hasAnyUnit()"
+                title="Place School">
+          🏫
+          <span>School</span>
+        </button>
+        
+        <!-- Clear Tool -->
+        <button class="paint-tool clear-tool" 
+                [class.active]="paintMode === 'clear'"
+                (click)="setPaintMode('clear')"
+                title="Erase">
+          🧹
+          <span>Erase</span>
+        </button>
       </div>
-
-      <!-- Quick Actions Bar -->
-      <div class="quick-actions">
-        <!-- Municipality Tools -->
-        <div class="tool-group">
-          <label>Municipality:</label>
-          <button 
-            *ngFor="let municipality of municipalityManager.getMunicipalities()" 
-            class="tool-btn municipality-btn"
-            [class.active]="selected === municipality.id"
-            [style.background-color]="municipality.baseColorString"
-            (click)="selectAndAutoCreate('municipality', municipality.id)">
-            {{ municipality.name }}
-          </button>
-          <button class="tool-btn add-btn" (click)="quickAdd('municipality')">+ New</button>
-        </div>
-
-        <!-- Area Tools -->
-        <div class="tool-group">
-          <label>Area:</label>
-          <button 
-            *ngFor="let area of getAvailableAreas()" 
-            class="tool-btn area-btn"
-            [class.active]="selected === area.id"
-            [style.background-color]="area.colorString"
-            (click)="selectAndAutoCreate('area', area.id)">
-            {{ area.name }}
-          </button>
-          <button class="tool-btn add-btn" (click)="quickAdd('area')" [disabled]="!canAddArea()">
-            + New Area
-          </button>
-        </div>
-
-        <!-- Unit Tools -->
-        <div class="tool-group">
-          <label>Unit:</label>
-          <button 
-            *ngFor="let unit of getAvailableUnits()" 
-            class="tool-btn unit-btn"
-            [class.active]="selected === unit.id"
-            [style.background-color]="unit.colorString"
-            (click)="selectAndAutoCreate('unit', unit.id)">
-            {{ unit.name }}
-          </button>
-          <button class="tool-btn add-btn" (click)="quickAdd('unit')" [disabled]="!canAddUnit()">
-            + New Unit
-          </button>
-        </div>
-
-        <!-- School Tool -->
-        <div class="tool-group">
-          <label>School:</label>
-          <button 
-            class="tool-btn school-btn"
-            [class.active]="isSchoolMode"
-            [disabled]="!canPlaceSchool()"
-            (click)="enterSchoolMode()">
-            🏫 {{ isSchoolMode ? 'Placing...' : 'Place School' }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Instructions -->
-      <div class="instructions">
-        {{ getInstructions() }}
+      
+      <!-- Status (desktop only) -->
+      <div class="paint-status desktop-only">
+        <span class="current-tool">{{ getPaintModeLabel() }}</span>
+        <span class="instruction">{{ getPaintInstruction() }}</span>
       </div>
     </div>
   `,
@@ -88,8 +70,27 @@ export class BoundarySelectorComponent {
   selected: string | null = null;
   selectedUnitForSchool: string | null = null; // Track which unit is selected for school placement
   isSchoolMode: boolean = false; // Track if we're in school placement mode
+  
+  // Simple paint mode system
+  paintMode: 'municipality' | 'area' | 'unit' | 'school' | 'clear' | null = null;
 
-  constructor(public municipalityManager: MunicipalityManagerService) {}
+  constructor(
+    public municipalityManager: MunicipalityManagerService,
+    private cdRef: ChangeDetectorRef,
+    private ngZone: NgZone,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
+    // Only set up window callbacks in browser environment
+    if (isPlatformBrowser(this.platformId)) {
+      // Set up auto-refresh mechanism that can be called from outside Angular
+      (window as any).refreshBoundarySelector = () => {
+        this.ngZone.run(() => {
+          this.cdRef.markForCheck();
+          this.cdRef.detectChanges();
+        });
+      };
+    }
+  }
 
   // New methods for improved UX
   getModeLabel(): string {
@@ -175,15 +176,47 @@ export class BoundarySelectorComponent {
     }
   }
 
+  getSelectedMunicipalityId(): string | null {
+    // Only return if a municipality is actually selected (no fallback)
+    const municipality = this.municipalityManager.getMunicipalityById(this.selected || '');
+    if (municipality) return municipality.id;
+    
+    const area = this.municipalityManager.getAreaById(this.selected || '');
+    if (area) return area.municipalityId;
+    
+    const unit = this.municipalityManager.getUnitById(this.selected || '');
+    if (unit) return unit.municipalityId;
+    
+    return null; // No fallback for hierarchy filtering
+  }
+
+  getSelectedAreaId(): string | null {
+    // Only return if an area is actually selected (no fallback)
+    const area = this.municipalityManager.getAreaById(this.selected || '');
+    if (area) return area.id;
+    
+    const unit = this.municipalityManager.getUnitById(this.selected || '');
+    if (unit) return unit.areaId;
+    
+    return null; // No fallback for hierarchy filtering
+  }
+
   getAvailableAreas() {
-    return this.municipalityManager.getMunicipalities()
-      .flatMap(m => m.areas);
+    // Only show areas from the currently selected municipality
+    const selectedMunicipalityId = this.getSelectedMunicipalityId();
+    if (!selectedMunicipalityId) return [];
+    
+    const municipality = this.municipalityManager.getMunicipalityById(selectedMunicipalityId);
+    return municipality ? municipality.areas : [];
   }
 
   getAvailableUnits() {
-    return this.municipalityManager.getMunicipalities()
-      .flatMap(m => m.areas)
-      .flatMap(a => a.units);
+    // Only show units from the currently selected area
+    const selectedAreaId = this.getSelectedAreaId();
+    if (!selectedAreaId) return [];
+    
+    const area = this.municipalityManager.getAreaById(selectedAreaId);
+    return area ? area.units : [];
   }
 
   canAddArea(): boolean {
@@ -309,5 +342,119 @@ export class BoundarySelectorComponent {
     if (unit) return `${unit.name} (Unit - Ready for school placement)`;
     
     return 'Unknown';
+  }
+
+  // New methods for hierarchical UI
+  getSelectedUnitId(): string | null {
+    const unit = this.municipalityManager.getUnitById(this.selected || '');
+    return unit ? unit.id : null;
+  }
+
+  getCurrentSelectionName(): string {
+    const municipality = this.municipalityManager.getMunicipalityById(this.selected || '');
+    if (municipality) return `${municipality.name} (Municipality)`;
+    
+    const area = this.municipalityManager.getAreaById(this.selected || '');
+    if (area) return `${area.name} (Area)`;
+    
+    const unit = this.municipalityManager.getUnitById(this.selected || '');
+    if (unit) return `${unit.name} (Unit)`;
+    
+    return 'Unknown';
+  }
+
+  onMunicipalityChange(event: any) {
+    const municipalityId = event.target.value;
+    if (municipalityId) {
+      this.selectAndAutoCreate('municipality', municipalityId);
+    } else {
+      this.clearSelection();
+    }
+  }
+
+  onAreaChange(event: any) {
+    const areaId = event.target.value;
+    if (areaId) {
+      this.selectAndAutoCreate('area', areaId);
+    } else {
+      // Keep municipality selected but clear area
+      const municipalityId = this.getSelectedMunicipalityId();
+      if (municipalityId) {
+        this.selectAndAutoCreate('municipality', municipalityId);
+      }
+    }
+  }
+
+  onUnitChange(event: any) {
+    const unitId = event.target.value;
+    if (unitId) {
+      this.selectAndAutoCreate('unit', unitId);
+    } else {
+      // Keep area selected but clear unit
+      const areaId = this.getSelectedAreaId();
+      if (areaId) {
+        this.selectAndAutoCreate('area', areaId);
+      }
+    }
+  }
+
+  // Simple Paint Mode System
+  setPaintMode(mode: 'municipality' | 'area' | 'unit' | 'school' | 'clear') {
+    this.paintMode = mode;
+    this.isSchoolMode = (mode === 'school');
+    
+    // Emit the paint mode to the game scene
+    this.boundarySelected.emit(`paint:${mode}`);
+  }
+  
+  startNewMunicipality() {
+    // Reset the current municipality to start a new one
+    this.boundarySelected.emit('paint:reset_municipality');
+    this.setPaintMode('municipality');
+  }
+  
+  updateButtonStates() {
+    // Force change detection to update button states immediately
+    // This method is called from the paint system to refresh UI
+    this.ngZone.run(() => {
+      this.cdRef.markForCheck();
+      this.cdRef.detectChanges();
+    });
+  }
+
+  getPaintModeLabel(): string {
+    switch (this.paintMode) {
+      case 'municipality': return '🏛️ Municipality Brush';
+      case 'area': return '📍 Area Brush';
+      case 'unit': return '🏘️ Unit Brush';
+      case 'school': return '🏫 School Placer';
+      case 'clear': return '🧹 Eraser';
+      default: return 'Select a tool';
+    }
+  }
+
+  getPaintInstruction(): string {
+    switch (this.paintMode) {
+      case 'municipality': return 'Click/drag to paint tiles with the same municipality color. Double-click Municipality button to start a new municipality.';
+      case 'area': return 'Click/drag on municipality tiles (colored) to create areas within them.';
+      case 'unit': return 'Click/drag on area tiles to create units within them.';
+      case 'school': return 'Click on unit tiles to place schools. Schools can only be placed on units.';
+      case 'clear': return 'Click/drag on any painted tile to erase it and return it to green.';
+      default: return 'Choose a paint tool to start building your city hierarchy';
+    }
+  }
+
+  hasAnyMunicipality(): boolean {
+    return this.municipalityManager.getMunicipalities().length > 0;
+  }
+
+  hasAnyArea(): boolean {
+    return this.municipalityManager.getMunicipalities()
+      .some(m => m.areas.length > 0);
+  }
+
+  hasAnyUnit(): boolean {
+    return this.municipalityManager.getMunicipalities()
+      .some(m => m.areas.some(a => a.units.length > 0));
   }
 }

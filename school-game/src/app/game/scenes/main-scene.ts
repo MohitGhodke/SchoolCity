@@ -13,9 +13,14 @@ export class MainSceneFactory {
         private gameStateService: GameStateService;
         private renderingService: RenderingService;
         private educationHierarchyService: EducationHierarchyService;
-  private isSelecting: boolean = false;
-  private selectedBoundary: string | null = null;
-  private isPlacingSchool: boolean = false;
+        private isSelecting: boolean = false;
+        private selectedBoundary: string | null = null;
+        private isPlacingSchool: boolean = false;
+        
+        // Paint mode system
+        private paintMode: 'municipality' | 'area' | 'unit' | 'school' | 'clear' | null = null;
+        private currentMunicipalityId: string | null = null;
+        private currentAreaId: string | null = null;
 
         constructor() {
           super({ key: 'MainScene' });
@@ -37,7 +42,16 @@ export class MainSceneFactory {
 
           // Listen for boundary selection from Angular
           (window as any).setSelectedBoundary = (boundaryId: string) => {
-            if (boundaryId.startsWith('school:')) {
+            if (boundaryId.startsWith('paint:')) {
+              // Handle new paint mode system
+              const paintMode = boundaryId.replace('paint:', '');
+              if (paintMode === 'reset_municipality') {
+                // Reset current municipality to start a new one
+                this.currentMunicipalityId = null;
+              } else {
+                this.setPaintMode(paintMode);
+              }
+            } else if (boundaryId.startsWith('school:')) {
               this.isPlacingSchool = true;
               this.selectedBoundary = boundaryId; // Keep the full "school:unitId" format
             } else {
@@ -48,7 +62,11 @@ export class MainSceneFactory {
 
           // Set up input handling for click-and-drag selection
           (this as any)['input'].on('pointerdown', (pointer: any) => {
-            if (this.isPlacingSchool) {
+            if (this.paintMode) {
+              // Use new paint system
+              this.isSelecting = true;
+              this.paintAt(pointer.x, pointer.y);
+            } else if (this.isPlacingSchool) {
               this.tryPlaceSchoolAt(pointer.x, pointer.y);
             } else if (this.selectedBoundary) {
               this.isSelecting = true;
@@ -65,7 +83,10 @@ export class MainSceneFactory {
             }
           });
           (this as any)['input'].on('pointermove', (pointer: any) => {
-            if (this.isSelecting && this.selectedBoundary) {
+            if (this.isSelecting && this.paintMode) {
+              // Continue painting while dragging
+              this.paintAt(pointer.x, pointer.y);
+            } else if (this.isSelecting && this.selectedBoundary) {
               this.assignBoundaryAt(pointer.x, pointer.y);
             }
           });
@@ -158,6 +179,205 @@ export class MainSceneFactory {
 
         update(): void {
           // Use the hierarchy for gameplay or rendering logic
+        }
+
+        setPaintMode(mode: string): void {
+          this.paintMode = mode as 'municipality' | 'area' | 'unit' | 'school' | 'clear';
+          this.isPlacingSchool = (mode === 'school');
+          this.selectedBoundary = null; // Clear old selection system
+          
+          // Reset active municipality/area when switching modes
+          if (mode !== 'municipality') {
+            this.currentMunicipalityId = null;
+          }
+          if (mode !== 'area') {
+            this.currentAreaId = null;
+          }
+        }
+
+        paintAt(screenX: number, screenY: number): void {
+          const { x, y } = this.renderingService.screenToGrid(screenX, screenY);
+          const gridService = (this.gameStateService as any).gridService;
+          
+          if (!gridService || !gridService.isValidPosition(x, y)) return;
+          
+          const tile = gridService.getTile(x, y);
+          if (!tile) return;
+
+          switch (this.paintMode) {
+            case 'municipality':
+              this.paintMunicipality(tile);
+              break;
+            case 'area':
+              this.paintArea(tile);
+              break;
+            case 'unit':
+              this.paintUnit(tile);
+              break;
+            case 'school':
+              this.paintSchool(tile);
+              break;
+            case 'clear':
+              this.clearTile(tile);
+              break;
+          }
+          
+          // Re-render the game after painting
+          this.gameStateService.renderGame();
+          
+          // Notify Angular that button states may need updating
+          if (typeof window !== 'undefined') {
+            // Call both callback functions to ensure proper state refresh
+            if ((window as any).updatePaintToolStates) {
+              (window as any).updatePaintToolStates();
+            }
+            if ((window as any).refreshBoundarySelector) {
+              (window as any).refreshBoundarySelector();
+            }
+          }
+        }
+
+        paintMunicipality(tile: any): void {
+          if (!tile.municipalityId) {
+            const municipalityManager = (this.renderingService as any).municipalityManager;
+            
+            // Create a new municipality only if we don't have an active one
+            if (!this.currentMunicipalityId) {
+              municipalityManager.addMunicipality();
+              const municipalities = municipalityManager.getMunicipalities();
+              const newMunicipality = municipalities[municipalities.length - 1];
+              this.currentMunicipalityId = newMunicipality.id;
+            }
+            
+            // Assign the current active municipality to this tile
+            tile.municipalityId = this.currentMunicipalityId;
+            tile.areaId = '';
+            tile.unitId = '';
+          }
+        }
+
+        paintArea(tile: any): void {
+          if (tile.municipalityId && !tile.unitId) {
+            const municipalityManager = (this.renderingService as any).municipalityManager;
+            
+            // Create a new area only if we don't have an active one for this municipality
+            if (!this.currentAreaId || !tile.areaId) {
+              const newArea = municipalityManager.addArea(tile.municipalityId);
+              if (newArea) {
+                this.currentAreaId = newArea.id;
+              }
+            }
+            
+            // Assign the current active area to this tile
+            if (this.currentAreaId) {
+              tile.areaId = this.currentAreaId;
+              tile.unitId = '';
+            }
+          }
+        }
+
+        paintUnit(tile: any): void {
+          if (tile.areaId && !tile.unitId) {
+            // Create a new unit within the area
+            const municipalityManager = (this.renderingService as any).municipalityManager;
+            const area = municipalityManager.getAreaById(tile.areaId);
+            if (area) {
+              // Add unit using municipality manager (it creates proper IDs)
+              const newUnit = municipalityManager.addUnit(area.municipalityId, tile.areaId);
+              
+              // Assign the created unit ID to tile
+              tile.unitId = newUnit.id;
+            }
+          }
+        }
+
+        paintSchool(tile: any): void {
+          if (tile.unitId && !tile.hasSchool) {
+            tile.hasSchool = true;
+          }
+        }
+
+        clearTile(tile: any): void {
+          // Store what we're clearing for cleanup
+          const clearedMunicipalityId = tile.municipalityId;
+          const clearedAreaId = tile.areaId;
+          const clearedUnitId = tile.unitId;
+          
+          // Clear the tile completely - reset to default state (no boundaries)
+          tile.municipalityId = '';
+          tile.areaId = '';
+          tile.unitId = '';
+          tile.hasSchool = false;
+          
+          // Clean up orphaned data structures
+          this.cleanupOrphanedStructures(clearedMunicipalityId, clearedAreaId, clearedUnitId);
+        }
+        
+        cleanupOrphanedStructures(municipalityId: string, areaId: string, unitId: string): void {
+          const gridService = (this.gameStateService as any).gridService;
+          const municipalityManager = (this.renderingService as any).municipalityManager;
+          
+          if (!gridService || !municipalityManager) return;
+          
+          // Check if municipality is still used anywhere
+          if (municipalityId) {
+            let municipalityStillUsed = false;
+            for (let x = 0; x < gridService.width; x++) {
+              for (let y = 0; y < gridService.height; y++) {
+                const tile = gridService.getTile(x, y);
+                if (tile && tile.municipalityId === municipalityId) {
+                  municipalityStillUsed = true;
+                  break;
+                }
+              }
+              if (municipalityStillUsed) break;
+            }
+            
+            // If municipality is not used anywhere, remove it
+            if (!municipalityStillUsed) {
+              municipalityManager.removeMunicipality(municipalityId);
+            }
+          }
+          
+          // Check if area is still used anywhere
+          if (areaId) {
+            let areaStillUsed = false;
+            for (let x = 0; x < gridService.width; x++) {
+              for (let y = 0; y < gridService.height; y++) {
+                const tile = gridService.getTile(x, y);
+                if (tile && tile.areaId === areaId) {
+                  areaStillUsed = true;
+                  break;
+                }
+              }
+              if (areaStillUsed) break;
+            }
+            
+            // If area is not used anywhere, remove it
+            if (!areaStillUsed) {
+              municipalityManager.removeArea(areaId);
+            }
+          }
+          
+          // Check if unit is still used anywhere
+          if (unitId) {
+            let unitStillUsed = false;
+            for (let x = 0; x < gridService.width; x++) {
+              for (let y = 0; y < gridService.height; y++) {
+                const tile = gridService.getTile(x, y);
+                if (tile && tile.unitId === unitId) {
+                  unitStillUsed = true;
+                  break;
+                }
+              }
+              if (unitStillUsed) break;
+            }
+            
+            // If unit is not used anywhere, remove it
+            if (!unitStillUsed) {
+              municipalityManager.removeUnit(unitId);
+            }
+          }
         }
 
         destroy(): void {

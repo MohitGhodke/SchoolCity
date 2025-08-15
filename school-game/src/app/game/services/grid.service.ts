@@ -27,14 +27,13 @@ export class GridService {
   }
 
   private initializeGrid(): void {
-    // Start with only municipality assigned, no area/unit
-    const municipalityId = 'municipality-1';
+    // Start with completely empty tiles - no boundaries assigned
     this.grid = Array.from({ length: this.gridSize }, (_, y) =>
       Array.from({ length: this.gridSize }, (_, x) => ({ 
         x, 
         y, 
         hasSchool: false,
-        municipalityId,
+        municipalityId: '',
         areaId: '',
         unitId: ''
       }))

@@ -46,8 +46,7 @@ export class MunicipalityManagerService {
   ];
 
   constructor() {
-    // Initialize with first municipality
-    this.addMunicipality();
+    // Start with empty municipalities - let user create them via paint mode
   }
 
   getMunicipalities(): MunicipalityDefinition[] {
@@ -197,6 +196,11 @@ export class MunicipalityManagerService {
 
   // Get color for rendering (returns hex number for Phaser)
   getColorForBoundary(boundaryId: string): number {
+    // Return default color for empty/null boundary IDs
+    if (!boundaryId || boundaryId.trim() === '') {
+      return 0xe3f6fc; // Default tile color from constants
+    }
+    
     const municipality = this.getMunicipalityById(boundaryId);
     if (municipality) return municipality.baseColor;
 
@@ -206,6 +210,47 @@ export class MunicipalityManagerService {
     const unit = this.getUnitById(boundaryId);
     if (unit) return unit.color;
 
-    return 0xcccccc; // Default color as hex number
+    return 0xe3f6fc; // Default color as hex number
+  }
+
+  // Remove methods for cleanup
+  removeMunicipality(municipalityId: string): boolean {
+    const index = this.municipalities.findIndex(m => m.id === municipalityId);
+    if (index !== -1) {
+      this.municipalities.splice(index, 1);
+      return true;
+    }
+    return false;
+  }
+
+  removeArea(areaId: string): boolean {
+    for (const municipality of this.municipalities) {
+      const areaIndex = municipality.areas.findIndex(a => a.id === areaId);
+      if (areaIndex !== -1) {
+        municipality.areas.splice(areaIndex, 1);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  removeUnit(unitId: string): boolean {
+    for (const municipality of this.municipalities) {
+      for (const area of municipality.areas) {
+        const unitIndex = area.units.findIndex(u => u.id === unitId);
+        if (unitIndex !== -1) {
+          area.units.splice(unitIndex, 1);
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // Clear all data (for clean slate)
+  clearAll(): void {
+    this.municipalities = [];
+    this.counter = 1;
+    // Don't auto-add municipality - let user create via paint mode
   }
 }

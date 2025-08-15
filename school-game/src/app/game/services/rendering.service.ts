@@ -75,19 +75,31 @@ export class RenderingService {
   drawTile(x: number, y: number, color: number, borderColor: number, tile?: Tile): void {
     if (!this.graphics) return;
 
-    // Use the most specific boundary color: unit > area > municipality
+    // Default to the passed color (which should be the default tile color)
     let fillColor = color;
+    
     if (tile) {
-      // Use dynamic municipality manager for colors
-      if (tile.unitId) {
+      // Check if tile has any boundary assignments - use strict string checks
+      const hasMunicipality = tile.municipalityId && tile.municipalityId.trim() !== '';
+      const hasArea = tile.areaId && tile.areaId.trim() !== '';
+      const hasUnit = tile.unitId && tile.unitId.trim() !== '';
+      
+      if (hasUnit) {
+        // Unit has highest priority
         fillColor = this.municipalityManager.getColorForBoundary(tile.unitId);
-      } else if (tile.areaId) {
+      } else if (hasArea) {
+        // Area has medium priority
         fillColor = this.municipalityManager.getColorForBoundary(tile.areaId);
-      } else if (tile.municipalityId) {
+      } else if (hasMunicipality) {
+        // Municipality has lowest priority
         fillColor = this.municipalityManager.getColorForBoundary(tile.municipalityId);
       } else {
-        fillColor = GAME_CONSTANTS.COLORS.TILE_FILL; // Default if no boundary
+        // No boundaries assigned - use default tile color
+        fillColor = GAME_CONSTANTS.COLORS.TILE_FILL;
       }
+    } else {
+      // No tile data - use default color
+      fillColor = GAME_CONSTANTS.COLORS.TILE_FILL;
     }
 
     const { sx, sy } = this.gridToScreen(x, y);

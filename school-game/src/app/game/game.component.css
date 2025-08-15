@@ -67,18 +67,17 @@
 
 .control-bar {
   position: fixed;
-  top: 32px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 20px;
+  right: 20px; /* Move to top-right corner */
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px; /* Smaller gap */
   z-index: 100;
-  background: rgba(252, 252, 252, 0.92); /* very light, almost white */
-  border-radius: 18px;
-  padding: 16px 32px;
-  box-shadow: 0 4px 24px 0 rgba(60,60,60,0.07);
-  border: 1px solid #f0f0f0;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px; /* Smaller radius */
+  padding: 8px 16px; /* Smaller padding */
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 #gameContainer {
@@ -106,34 +105,60 @@
   background: #e7e1cb !important;
 }
 
-.control-bar button, .control-bar app-boundary-selector button, .main-btn,
-.control-bar button:not(:last-child),
-.control-bar app-boundary-selector button {
+.control-bar button, .main-btn {
   font-family: inherit;
-  font-size: 1rem;
-  padding: 8px 18px;
-  border-radius: 8px;
+  font-size: 14px; /* Smaller font */
+  padding: 6px 12px; /* Smaller padding */
+  border-radius: 6px; /* Smaller radius */
   border: 1px solid #e0e0e0;
-  margin: 0 2px;
+  margin: 0;
   box-shadow: none;
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s, border 0.2s;
+  transition: all 0.2s ease;
   outline: none;
-  min-width: 120px !important;
-  max-width: 140px !important;
+  min-width: auto; /* Remove min-width */
   font-weight: 500;
   background: #fcfcfc;
   color: #333;
   text-align: center;
 }
-.control-bar button:hover, .control-bar app-boundary-selector button:hover, .main-btn:hover {
+.control-bar button:hover, .main-btn:hover {
   filter: brightness(0.95) saturate(1.1);
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
-.control-bar button:active, .control-bar app-boundary-selector button:active, .main-btn:active {
+.control-bar button:active, .main-btn:active {
   filter: brightness(0.92) saturate(1.2);
 }
 
 .school-popup, .debug-popup {
   display: none;
+}
+
+/* Mobile responsiveness for control bar */
+@media (max-width: 768px) {
+  .control-bar {
+    top: 10px;
+    right: 10px;
+    padding: 6px 12px; /* Smaller padding */
+    gap: 6px; /* Smaller gap */
+  }
+  
+  .control-bar button, .main-btn {
+    font-size: 12px; /* Smaller font */
+    padding: 4px 8px; /* Smaller padding */
+  }
+}
+
+@media (max-width: 480px) {
+  .control-bar {
+    top: 5px;
+    right: 5px;
+    padding: 4px 8px; /* Even smaller */
+    gap: 4px;
+  }
+  
+  .control-bar button, .main-btn {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
 }

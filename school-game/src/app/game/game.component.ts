@@ -16,12 +16,15 @@ import { GAME_CONSTANTS } from './constants/game-constants';
   standalone: true,
   imports: [CommonModule, BoundarySelectorComponent],
   template: `
+    <!-- Top control bar with utilities only -->
     <div class="control-bar">
-      <app-boundary-selector (boundarySelected)="onBoundarySelected($event)"></app-boundary-selector>
-      <button class="main-btn" (click)="zoomOut()" aria-label="Zoom Out">-</button>
-      <button class="main-btn" (click)="zoomIn()" aria-label="Zoom In">+</button>
-      <button class="main-btn" (click)="onCleanSlate()">Clean Slate</button>
+      <button class="main-btn" (click)="zoomOut()" aria-label="Zoom Out">🔍−</button>
+      <button class="main-btn" (click)="zoomIn()" aria-label="Zoom In">🔍+</button>
+      <button class="main-btn" (click)="onCleanSlate()">🧹 Clean Slate</button>
     </div>
+
+    <!-- Separate paint toolbar -->
+    <app-boundary-selector (boundarySelected)="onBoundarySelected($event)"></app-boundary-selector>
 
     <!-- School Info Modal -->
     <div class="school-info-modal" [class.modal-hidden]="!selectedSchool">
@@ -194,6 +197,16 @@ export class GameComponent implements OnInit, OnDestroy {
           gameConfig.height,
           GAME_CONSTANTS.GRID.SIZE
         );
+        
+        // Set up callback for paint tool state updates
+        (window as any).updatePaintToolStates = () => {
+          this.ngZone.run(() => {
+            // Force change detection by marking for check
+            this.cdRef.markForCheck();
+            this.cdRef.detectChanges();
+          });
+        };
+        
         // Add pinch-to-zoom support for touch devices
         container.addEventListener('touchstart', this.onTouchStart, { passive: false });
         container.addEventListener('touchmove', this.onTouchMove, { passive: false });
@@ -238,6 +251,10 @@ export class GameComponent implements OnInit, OnDestroy {
 
   onCleanSlate() {
     this.gameStateService.cleanSlate();
-    // Optionally reset hierarchy as well if needed
+    // Also clear the municipality manager data
+    const municipalityManager = (this.renderingService as any).municipalityManager;
+    if (municipalityManager) {
+      municipalityManager.clearAll();
+    }
   }
 }
