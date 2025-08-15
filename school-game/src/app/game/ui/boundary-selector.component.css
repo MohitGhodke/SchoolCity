@@ -1,110 +1,136 @@
-/* Simple Paint Toolbar - Bottom of Screen */
+/* Simple Paint Toolbar - Bottom of Screen with Theme Support */
 .paint-toolbar {
   position: fixed;
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(255, 255, 255, 0.96);
-  backdrop-filter: blur(12px);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-  padding: 20px 24px; /* Increased top/bottom padding */
-  z-index: 10000; /* Much higher z-index */
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  min-width: 480px; /* Reduced min-width */
-  max-width: 90vw; /* Add max-width for mobile */
+  background: var(--bg-surface);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  padding: 20px 28px;
+  z-index: 10000;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  min-width: 520px;
+  max-width: calc(100vw - 40px);
   text-align: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
 }
 
 /* Tool Set */
 .tool-set {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   justify-content: center;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
-/* Paint Tools */
+/* Paint Tools with modern gradient design */
 .paint-tool {
-  padding: 14px 16px; /* Increased padding for better visibility */
+  padding: 16px 18px;
   border: 2px solid transparent;
-  border-radius: 12px;
-  background: #f8f9fa;
-  color: #2c3e50;
-  font-size: 13px; /* Slightly smaller font */
+  border-radius: 14px;
+  background: var(--button-bg);
+  color: var(--text-primary);
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  min-width: 80px; /* Reduced min-width */
-  max-width: 120px; /* Add max-width */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 85px;
+  max-width: 130px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px; /* Reduced gap */
-  white-space: nowrap; /* Prevent text wrapping */
-  overflow: hidden; /* Hide overflow */
-  text-overflow: ellipsis; /* Add ellipsis for long text */
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  position: relative;
+}
+
+.paint-tool::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.1));
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .paint-tool:hover:not(:disabled) {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  background: var(--button-hover);
+}
+
+.paint-tool:hover:not(:disabled)::before {
+  opacity: 1;
 }
 
 .paint-tool.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
 }
 
 .paint-tool:disabled {
-  background: #e9ecef;
-  color: #adb5bd;
+  background: var(--button-disabled);
+  color: var(--text-secondary);
   cursor: not-allowed;
   transform: none;
-  box-shadow: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  opacity: 0.6;
 }
 
-/* Individual Tool Colors */
+/* Individual Tool Colors with beautiful gradients */
 .municipality-tool.active {
-  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-  border-color: #3498db;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
+  background: linear-gradient(135deg, #6ee7b7, #34d399);
+  color: white;
+  border-color: #6ee7b7;
+  box-shadow: 0 8px 25px rgba(110, 231, 183, 0.4);
 }
 
 .area-tool.active {
-  background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
-  border-color: #f39c12;
-  box-shadow: 0 0 0 3px rgba(243, 156, 18, 0.3);
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: white;
+  border-color: #fbbf24;
+  box-shadow: 0 8px 25px rgba(251, 191, 36, 0.4);
 }
 
 .unit-tool.active {
-  background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
-  border-color: #9b59b6;
-  box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.3);
+  background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+  color: white;
+  border-color: #a78bfa;
+  box-shadow: 0 8px 25px rgba(167, 139, 250, 0.4);
 }
 
 .school-tool.active {
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-  border-color: #e74c3c;
-  box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.3);
+  background: linear-gradient(135deg, #f472b6, #ec4899);
+  color: white;
+  border-color: #f472b6;
+  box-shadow: 0 8px 25px rgba(244, 114, 182, 0.4);
 }
 
 .clear-tool.active {
-  background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
-  border-color: #95a5a6;
-  box-shadow: 0 0 0 3px rgba(149, 165, 166, 0.3);
+  background: linear-gradient(135deg, #64748b, #475569);
+  color: white;
+  border-color: #64748b;
+  box-shadow: 0 8px 25px rgba(100, 116, 139, 0.4);
 }
 
 /* Status Area */
 .paint-status {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  gap: 6px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .desktop-only {
@@ -114,45 +140,57 @@
 .current-tool {
   font-size: 14px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--text-primary);
 }
 
 .instruction {
   font-size: 12px;
-  color: #7f8c8d;
+  color: var(--text-secondary);
   font-style: italic;
+  line-height: 1.4;
+  max-width: 480px;
+  margin: 0 auto;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
   .paint-toolbar {
-    bottom: 10px;
-    left: 10px;
-    right: 10px;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
     transform: none;
     min-width: auto;
-    padding: 12px 16px; /* Reduced padding for mobile */
-    border-radius: 12px;
+    max-width: none;
+    padding: 16px 20px;
+    border-radius: 16px;
+    width: calc(100vw - 24px);
+    box-sizing: border-box;
   }
   
   .tool-set {
-    flex-wrap: nowrap; /* Force horizontal layout */
-    gap: 4px; /* Smaller gaps */
-    overflow-x: auto; /* Allow horizontal scroll if needed */
-    padding: 2px 0;
+    flex-wrap: nowrap;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 4px 0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .tool-set::-webkit-scrollbar {
+    display: none;
   }
   
   .paint-tool {
-    flex: 1; /* Equal width distribution */
-    min-width: 60px; /* Smaller min-width */
-    max-width: none; /* Remove max-width restriction */
-    padding: 10px 4px; /* Reduced padding */
-    font-size: 11px; /* Smaller font */
-    gap: 2px;
-    flex-direction: column; /* Stack icon and text vertically */
+    flex: 1;
+    min-width: 65px;
+    max-width: none;
+    padding: 12px 6px;
+    font-size: 11px;
+    gap: 3px;
+    flex-direction: column;
+    border-radius: 12px;
   }
   
-  /* Hide instructions on mobile to save space */
   .desktop-only {
     display: none;
   }
@@ -160,25 +198,27 @@
 
 @media (max-width: 480px) {
   .paint-toolbar {
-    bottom: 5px;
-    left: 5px;
-    right: 5px;
-    padding: 8px 12px; /* Even smaller padding */
-    border-radius: 10px;
+    bottom: 8px;
+    left: 8px;
+    right: 8px;
+    padding: 12px 16px;
+    border-radius: 14px;
+    width: calc(100vw - 16px);
+    box-sizing: border-box;
   }
   
   .tool-set {
-    gap: 2px; /* Minimal gaps */
+    gap: 4px;
   }
   
   .paint-tool {
-    min-width: 50px; /* Even smaller */
-    padding: 8px 2px;
-    font-size: 10px; /* Smaller font */
-    border-radius: 8px;
+    min-width: 55px;
+    padding: 10px 4px;
+    font-size: 10px;
+    border-radius: 10px;
   }
   
   .paint-tool span {
-    font-size: 9px; /* Even smaller text on mobile */
+    font-size: 9px;
   }
 }

@@ -3,9 +3,11 @@ import { Component, ElementRef, OnInit, OnDestroy, ViewChild, Inject, PLATFORM_I
 import { isPlatformBrowser, CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { BoundarySelectorComponent } from './ui/boundary-selector.component';
+import { ThemeToggleComponent } from './ui/theme-toggle.component';
 import { GameEngineService, GameConfig } from './services/game-engine.service';
 import { GameStateService } from './services/game-state.service';
 import { RenderingService } from './services/rendering.service';
+import { ThemeService } from './services/theme.service';
 import { MainSceneFactory } from './scenes/main-scene';
 import { GameEventService } from './services/game-event.service';
 import { EducationHierarchyService } from './services/education-hierarchy.service';
@@ -14,13 +16,16 @@ import { GAME_CONSTANTS } from './constants/game-constants';
 @Component({
   selector: 'app-game',
   standalone: true,
-  imports: [CommonModule, BoundarySelectorComponent],
+  imports: [CommonModule, BoundarySelectorComponent, ThemeToggleComponent],
   template: `
-    <!-- Top control bar with utilities only -->
+    <!-- Top control bar with utilities and theme toggle -->
     <div class="control-bar">
-      <button class="main-btn" (click)="zoomOut()" aria-label="Zoom Out">🔍−</button>
-      <button class="main-btn" (click)="zoomIn()" aria-label="Zoom In">🔍+</button>
-      <button class="main-btn" (click)="onCleanSlate()">🧹 Clean Slate</button>
+      <div class="control-group">
+        <button class="main-btn" (click)="zoomOut()" aria-label="Zoom Out">🔍−</button>
+        <button class="main-btn" (click)="zoomIn()" aria-label="Zoom In">🔍+</button>
+        <button class="main-btn clean-slate-btn" (click)="onCleanSlate()">🧹 Clean Slate</button>
+      </div>
+      <app-theme-toggle></app-theme-toggle>
     </div>
 
     <!-- Separate paint toolbar -->
@@ -28,12 +33,16 @@ import { GAME_CONSTANTS } from './constants/game-constants';
 
     <!-- School Info Modal -->
     <div class="school-info-modal" [class.modal-hidden]="!selectedSchool">
-      <h3>{{ selectedSchool?.name || 'No School' }}</h3>
-      <p>Students: {{ selectedSchool?.currentStudents || 0 }} / {{ selectedSchool?.capacity || 0 }}</p>
-      <button (click)="addStudent()" [disabled]="!selectedSchool">Add Student</button>
-      <button (click)="removeStudent()" [disabled]="!selectedSchool || selectedSchool.currentStudents === 0">Remove Student</button>
-      <button (click)="removeSchool()" [disabled]="!selectedSchool">Remove School</button>
-      <button (click)="closeSchoolInfo()">Close</button>
+      <div class="modal-content">
+        <h3>{{ selectedSchool?.name || 'No School' }}</h3>
+        <p>Students: {{ selectedSchool?.currentStudents || 0 }} / {{ selectedSchool?.capacity || 0 }}</p>
+        <div class="modal-actions">
+          <button class="modal-btn primary" (click)="addStudent()" [disabled]="!selectedSchool">Add Student</button>
+          <button class="modal-btn secondary" (click)="removeStudent()" [disabled]="!selectedSchool || selectedSchool.currentStudents === 0">Remove Student</button>
+          <button class="modal-btn danger" (click)="removeSchool()" [disabled]="!selectedSchool">Remove School</button>
+          <button class="modal-btn" (click)="closeSchoolInfo()">Close</button>
+        </div>
+      </div>
     </div>
 
     <div id="gameContainer" #gameContainer></div>
@@ -44,6 +53,7 @@ export class GameComponent implements OnInit, OnDestroy {
   selectedSchool: any = null;
   selectedSchoolPos: { x: number, y: number } | null = null;
   private schoolClickedSubscription?: Subscription;
+  private themeSubscription?: Subscription;
   // Handle click on the game grid to select a school
   onGameContainerClick(event: MouseEvent) {
     // Get click position relative to the canvas
@@ -110,6 +120,7 @@ export class GameComponent implements OnInit, OnDestroy {
     private renderingService: RenderingService,
     private educationHierarchyService: EducationHierarchyService,
     private gameEventService: GameEventService,
+    private themeService: ThemeService,
     private ngZone: NgZone,
     private cdRef: ChangeDetectorRef
   ) {}
@@ -170,6 +181,9 @@ export class GameComponent implements OnInit, OnDestroy {
     }
   async ngOnInit() {
     if (isPlatformBrowser(this.platformId)) {
+      // Apply initial theme
+      this.themeService.getCurrentTheme();
+      
       try {
         // Wait a bit for the container to be properly sized
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -178,10 +192,15 @@ export class GameComponent implements OnInit, OnDestroy {
         // Use full window size in browser
         const width = window.innerWidth;
         const height = window.innerHeight;
+        
+        // Get theme background color for Phaser (as string for GameConfig)
+        const theme = this.themeService.getCurrentTheme();
+        const backgroundColor = theme.background; // Keep as hex string
+        
         const gameConfig: GameConfig = {
           width,
           height,
-          backgroundColor: GAME_CONSTANTS.GAME.BACKGROUND_COLOR
+          backgroundColor
         };
         // Create scene factory function
   const sceneFactory = MainSceneFactory.createScene(this.gameStateService, this.renderingService, this.educationHierarchyService, this.gameEventService);
@@ -225,6 +244,28 @@ export class GameComponent implements OnInit, OnDestroy {
             setTimeout(() => this.cdRef.detectChanges(), 0);
           });
         });
+
+        // Listen for theme changes to update Phaser canvas background
+        this.themeSubscription = this.themeService.isDarkMode$.subscribe((isDarkMode: boolean) => {
+          this.ngZone.run(() => {
+            const theme = this.themeService.getCurrentTheme();
+            const canvas = document.querySelector('canvas');
+            if (canvas) {
+              canvas.style.backgroundColor = theme.background;
+              canvas.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+            }
+            
+            // Update Phaser game background if game engine exists
+            if (this.gameEngineService.getGame()) {
+              const hexColor = parseInt(theme.background.replace('#', ''), 16);
+              this.gameEngineService.getGame().scene.scenes.forEach((scene: any) => {
+                if (scene.cameras && scene.cameras.main) {
+                  scene.cameras.main.setBackgroundColor(hexColor);
+                }
+              });
+            }
+          });
+        });
       } catch (error) {
         // (Error logging removed)
       }
@@ -238,6 +279,12 @@ export class GameComponent implements OnInit, OnDestroy {
     if (this.schoolClickedSubscription) {
       this.schoolClickedSubscription.unsubscribe();
     }
+    
+    // Unsubscribe from theme changes
+    if (this.themeSubscription) {
+      this.themeSubscription.unsubscribe();
+    }
+    
     this.gameEngineService.destroyGame();
   }
 

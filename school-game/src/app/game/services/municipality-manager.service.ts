@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { ThemeService } from './theme.service';
 
 export interface MunicipalityDefinition {
   id: string;
@@ -33,19 +34,7 @@ export class MunicipalityManagerService {
   private municipalities: MunicipalityDefinition[] = [];
   private counter = 1;
 
-  // Base colors for municipalities (hex numbers for Phaser)
-  private baseColors = [
-    0x4CAF50, // Green
-    0x2196F3, // Blue  
-    0xFF9800, // Orange
-    0x9C27B0, // Purple
-    0xF44336, // Red
-    0x607D8B, // Blue Grey
-    0x795548, // Brown
-    0x009688, // Teal
-  ];
-
-  constructor() {
+  constructor(private themeService: ThemeService) {
     // Start with empty municipalities - let user create them via paint mode
   }
 
@@ -54,7 +43,8 @@ export class MunicipalityManagerService {
   }
 
   addMunicipality(): MunicipalityDefinition {
-    const baseColor = this.baseColors[(this.municipalities.length) % this.baseColors.length];
+    const baseColors = this.themeService.getMunicipalityColors();
+    const baseColor = baseColors[(this.municipalities.length) % baseColors.length];
     const municipality: MunicipalityDefinition = {
       id: `municipality-${this.counter}`,
       name: `Municipality ${this.counter}`,
@@ -73,13 +63,14 @@ export class MunicipalityManagerService {
     if (!municipality) return null;
 
     const areaIndex = municipality.areas.length + 1;
-    const areaShade = this.generateShadeFromNumber(municipality.baseColor, 0.8); // Lighter shade
+    const areaColors = this.themeService.getAreaColors();
+    const areaColor = areaColors[(municipality.areas.length) % areaColors.length];
     const area: AreaDefinition = {
       id: `${municipalityId}-area-${areaIndex}`,
       name: `Area ${areaIndex}`,
       municipalityId: municipalityId,
-      color: areaShade.color,
-      colorString: areaShade.colorString,
+      color: areaColor,
+      colorString: this.hexNumberToString(areaColor),
       units: []
     };
 
@@ -93,14 +84,15 @@ export class MunicipalityManagerService {
     if (!municipality || !area) return null;
 
     const unitIndex = area.units.length + 1;
-    const unitShade = this.generateShadeFromNumber(municipality.baseColor, 0.6); // Darker shade
+    const unitColors = this.themeService.getUnitColors();
+    const unitColor = unitColors[(area.units.length) % unitColors.length];
     const unit: UnitDefinition = {
       id: `${areaId}-unit-${unitIndex}`,
       name: `Unit ${unitIndex}`,
       areaId: areaId,
       municipalityId: municipalityId,
-      color: unitShade.color,
-      colorString: unitShade.colorString
+      color: unitColor,
+      colorString: this.hexNumberToString(unitColor)
     };
 
     area.units.push(unit);
@@ -198,7 +190,7 @@ export class MunicipalityManagerService {
   getColorForBoundary(boundaryId: string): number {
     // Return default color for empty/null boundary IDs
     if (!boundaryId || boundaryId.trim() === '') {
-      return 0xe3f6fc; // Default tile color from constants
+      return this.themeService.getTileColors().default;
     }
     
     const municipality = this.getMunicipalityById(boundaryId);
@@ -210,7 +202,7 @@ export class MunicipalityManagerService {
     const unit = this.getUnitById(boundaryId);
     if (unit) return unit.color;
 
-    return 0xe3f6fc; // Default color as hex number
+    return this.themeService.getTileColors().default; // Default color from theme
   }
 
   // Remove methods for cleanup

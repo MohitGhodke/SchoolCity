@@ -4,6 +4,7 @@
 import { Injectable } from '@angular/core';
 import { GAME_CONSTANTS } from '../constants/game-constants';
 import { MunicipalityManagerService } from './municipality-manager.service';
+import { ThemeService } from './theme.service';
 import { Tile } from './grid.service';
 
 export interface RenderConfig {
@@ -32,7 +33,10 @@ export class RenderingService {
 
 
 
-  constructor(private municipalityManager: MunicipalityManagerService) {
+  constructor(
+    private municipalityManager: MunicipalityManagerService,
+    private themeService: ThemeService
+  ) {
     this.config = {
       tileWidth: GAME_CONSTANTS.GRID.TILE_WIDTH,
       tileHeight: GAME_CONSTANTS.GRID.TILE_HEIGHT,
@@ -94,12 +98,12 @@ export class RenderingService {
         // Municipality has lowest priority
         fillColor = this.municipalityManager.getColorForBoundary(tile.municipalityId);
       } else {
-        // No boundaries assigned - use default tile color
-        fillColor = GAME_CONSTANTS.COLORS.TILE_FILL;
+        // No boundaries assigned - use default tile color from theme
+        fillColor = this.themeService.getTileColors().default;
       }
     } else {
-      // No tile data - use default color
-      fillColor = GAME_CONSTANTS.COLORS.TILE_FILL;
+      // No tile data - use default color from theme
+      fillColor = this.themeService.getTileColors().default;
     }
 
     const { sx, sy } = this.gridToScreen(x, y);

@@ -1,57 +1,22 @@
-/* School Info Modal Styles */
-::ng-deep .school-info-modal {
-  position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  background: #fff !important;
-  border-radius: 16px !important;
-  box-shadow: 0 8px 32px 0 rgba(60,60,60,0.18) !important;
-  padding: 32px 40px 24px 40px !important;
-  z-index: 9999 !important;
-  min-width: 320px !important;
-  max-width: 90vw !important;
-  min-height: 120px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  gap: 18px !important;
+/* CSS Custom Properties for theming */
+:root {
+  --bg-primary: #f8fafb;
+  --bg-surface: #ffffff;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --color-primary: #4a90e2;
+  --color-secondary: #7dd3fc;
+  --color-accent: #10b981;
+  --button-bg: #ffffff;
+  --button-hover: #f3f4f6;
+  --button-active: #e5e7eb;
+  --button-disabled: #f9fafb;
 }
 
-::ng-deep .school-info-modal.modal-hidden {
-  display: none !important;
-}
-.school-info-modal h3 {
-  margin: 0 0 8px 0;
-  font-size: 1.4rem;
-  font-weight: 600;
-}
-.school-info-modal p {
-  margin: 0 0 16px 0;
-  font-size: 1.1rem;
-}
-.school-info-modal button {
-  margin: 4px 0;
-  min-width: 140px;
-  font-size: 1rem;
-  padding: 8px 0;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-  background: #f7f7f7;
-  color: #333;
-  cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
-}
-.school-info-modal button:hover {
-  background: #f0f0f0;
-}
 /* Game component styles */
-
-
-
 :host {
   display: block;
-  background: #e7e1cb;
+  background: var(--bg-primary);
   min-height: 100vh;
   min-width: 100vw;
   width: 100vw;
@@ -63,21 +28,30 @@
   top: 0;
   left: 0;
   z-index: 0;
+  transition: background-color 0.3s ease;
 }
 
 .control-bar {
   position: fixed;
   top: 20px;
-  right: 20px; /* Move to top-right corner */
+  right: 20px;
   display: flex;
   align-items: center;
-  gap: 8px; /* Smaller gap */
+  gap: 12px;
   z-index: 100;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 12px; /* Smaller radius */
-  padding: 8px 16px; /* Smaller padding */
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: var(--bg-surface);
+  border-radius: 16px;
+  padding: 12px 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 #gameContainer {
@@ -102,63 +76,244 @@
   top: 0 !important;
   width: 100vw !important;
   height: 100vh !important;
-  background: #e7e1cb !important;
+  background: var(--bg-primary) !important;
+  transition: background-color 0.3s ease !important;
 }
 
-.control-bar button, .main-btn {
-  font-family: inherit;
-  font-size: 14px; /* Smaller font */
-  padding: 6px 12px; /* Smaller padding */
-  border-radius: 6px; /* Smaller radius */
-  border: 1px solid #e0e0e0;
-  margin: 0;
-  box-shadow: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  outline: none;
-  min-width: auto; /* Remove min-width */
+/* Ensure the canvas updates with theme changes */
+:host ::ng-deep canvas[data-theme="dark"] {
+  background: #0f172a !important;
+}
+
+:host ::ng-deep canvas[data-theme="light"] {
+  background: #f8fafb !important;
+}
+
+/* Button styling with modern design */
+.main-btn {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
   font-weight: 500;
-  background: #fcfcfc;
-  color: #333;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  margin: 0;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  background: var(--button-bg);
+  color: var(--text-primary);
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.main-btn:hover {
+  background: var(--button-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.main-btn:active {
+  background: var(--button-active);
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.clean-slate-btn {
+  background: linear-gradient(135deg, var(--color-accent), #059669);
+  color: white;
+  border: none;
+}
+
+.clean-slate-btn:hover {
+  background: linear-gradient(135deg, #059669, var(--color-accent));
+  transform: translateY(-1px);
+  box-shadow: 0 3px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* School Info Modal Styles with modern design */
+.school-info-modal {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  background: var(--bg-surface) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15) !important;
+  padding: 0 !important;
+  z-index: 9999 !important;
+  min-width: 380px !important;
+  max-width: 90vw !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  backdrop-filter: blur(20px) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.school-info-modal.modal-hidden {
+  display: none !important;
+}
+
+.modal-content {
+  padding: 32px;
   text-align: center;
 }
-.control-bar button:hover, .main-btn:hover {
-  filter: brightness(0.95) saturate(1.1);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-.control-bar button:active, .main-btn:active {
-  filter: brightness(0.92) saturate(1.2);
+
+.modal-content h3 {
+  margin: 0 0 16px 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
-.school-popup, .debug-popup {
-  display: none;
+.modal-content p {
+  margin: 0 0 24px 0;
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
-/* Mobile responsiveness for control bar */
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.modal-btn {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: var(--button-bg);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 140px;
+  outline: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.modal-btn:hover {
+  background: var(--button-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.modal-btn:active {
+  background: var(--button-active);
+  transform: translateY(0);
+}
+
+.modal-btn.primary {
+  background: linear-gradient(135deg, var(--color-primary), #3b82f6);
+  color: white;
+  border: none;
+}
+
+.modal-btn.primary:hover {
+  background: linear-gradient(135deg, #3b82f6, var(--color-primary));
+  box-shadow: 0 3px 12px rgba(74, 144, 226, 0.3);
+}
+
+.modal-btn.secondary {
+  background: linear-gradient(135deg, var(--color-secondary), #0ea5e9);
+  color: white;
+  border: none;
+}
+
+.modal-btn.secondary:hover {
+  background: linear-gradient(135deg, #0ea5e9, var(--color-secondary));
+  box-shadow: 0 3px 12px rgba(125, 211, 252, 0.3);
+}
+
+.modal-btn.danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  border: none;
+}
+
+.modal-btn.danger:hover {
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+  box-shadow: 0 3px 12px rgba(239, 68, 68, 0.3);
+}
+
+.modal-btn:disabled {
+  background: var(--button-disabled) !important;
+  color: var(--text-secondary) !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Mobile responsiveness */
 @media (max-width: 768px) {
   .control-bar {
-    top: 10px;
-    right: 10px;
-    padding: 6px 12px; /* Smaller padding */
-    gap: 6px; /* Smaller gap */
+    top: 12px;
+    right: 12px;
+    padding: 10px 14px;
+    gap: 10px;
   }
   
-  .control-bar button, .main-btn {
-    font-size: 12px; /* Smaller font */
-    padding: 4px 8px; /* Smaller padding */
+  .main-btn {
+    font-size: 13px;
+    padding: 7px 12px;
+  }
+  
+  .school-info-modal {
+    min-width: 320px !important;
+  }
+  
+  .modal-content {
+    padding: 24px;
+  }
+  
+  .modal-content h3 {
+    font-size: 1.3rem;
+  }
+  
+  .modal-btn {
+    font-size: 13px;
+    padding: 10px 20px;
+    min-width: 120px;
   }
 }
 
 @media (max-width: 480px) {
   .control-bar {
-    top: 5px;
-    right: 5px;
-    padding: 4px 8px; /* Even smaller */
-    gap: 4px;
+    top: 8px;
+    right: 8px;
+    padding: 8px 12px;
+    gap: 8px;
   }
   
-  .control-bar button, .main-btn {
-    font-size: 11px;
-    padding: 3px 6px;
+  .main-btn {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+  
+  .school-info-modal {
+    min-width: 280px !important;
+    margin: 20px !important;
+  }
+  
+  .modal-content {
+    padding: 20px;
+  }
+  
+  .modal-content h3 {
+    font-size: 1.2rem;
+  }
+  
+  .modal-btn {
+    font-size: 12px;
+    padding: 8px 16px;
+    min-width: 100px;
   }
 }

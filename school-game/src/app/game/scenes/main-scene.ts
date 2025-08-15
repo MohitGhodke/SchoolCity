@@ -21,6 +21,7 @@ export class MainSceneFactory {
         private paintMode: 'municipality' | 'area' | 'unit' | 'school' | 'clear' | null = null;
         private currentMunicipalityId: string | null = null;
         private currentAreaId: string | null = null;
+        private currentUnitId: string | null = null;
 
         constructor() {
           super({ key: 'MainScene' });
@@ -186,12 +187,15 @@ export class MainSceneFactory {
           this.isPlacingSchool = (mode === 'school');
           this.selectedBoundary = null; // Clear old selection system
           
-          // Reset active municipality/area when switching modes
+          // Reset active IDs when switching modes to start fresh with each mode
           if (mode !== 'municipality') {
             this.currentMunicipalityId = null;
           }
           if (mode !== 'area') {
             this.currentAreaId = null;
+          }
+          if (mode !== 'unit') {
+            this.currentUnitId = null;
           }
         }
 
@@ -260,8 +264,8 @@ export class MainSceneFactory {
           if (tile.municipalityId && !tile.unitId) {
             const municipalityManager = (this.renderingService as any).municipalityManager;
             
-            // Create a new area only if we don't have an active one for this municipality
-            if (!this.currentAreaId || !tile.areaId) {
+            // Create a new area only if we don't have an active one
+            if (!this.currentAreaId) {
               const newArea = municipalityManager.addArea(tile.municipalityId);
               if (newArea) {
                 this.currentAreaId = newArea.id;
@@ -278,15 +282,22 @@ export class MainSceneFactory {
 
         paintUnit(tile: any): void {
           if (tile.areaId && !tile.unitId) {
-            // Create a new unit within the area
             const municipalityManager = (this.renderingService as any).municipalityManager;
-            const area = municipalityManager.getAreaById(tile.areaId);
-            if (area) {
-              // Add unit using municipality manager (it creates proper IDs)
-              const newUnit = municipalityManager.addUnit(area.municipalityId, tile.areaId);
-              
-              // Assign the created unit ID to tile
-              tile.unitId = newUnit.id;
+            
+            // Create a new unit only if we don't have an active one for this area
+            if (!this.currentUnitId) {
+              const area = municipalityManager.getAreaById(tile.areaId);
+              if (area) {
+                const newUnit = municipalityManager.addUnit(area.municipalityId, tile.areaId);
+                if (newUnit) {
+                  this.currentUnitId = newUnit.id;
+                }
+              }
+            }
+            
+            // Assign the current active unit to this tile
+            if (this.currentUnitId) {
+              tile.unitId = this.currentUnitId;
             }
           }
         }
