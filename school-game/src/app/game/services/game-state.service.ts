@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { GridService } from './grid.service';
 import { SchoolService } from './school.service';
 import { RenderingService } from './rendering.service';
+import { ThemeService } from './theme.service';
 import { GAME_CONSTANTS } from '../constants/game-constants';
 import { EducationHierarchyService } from './education-hierarchy.service';
 import { School, Municipality, Area, Unit } from '../models/education-hierarchy.models';
@@ -32,7 +33,8 @@ export class GameStateService {
     private gridService: GridService,
     private schoolService: SchoolService,
     private renderingService: RenderingService,
-    private educationHierarchyService: EducationHierarchyService
+    private educationHierarchyService: EducationHierarchyService,
+    private themeService: ThemeService
   ) {}
 
   startGame(): void {
@@ -109,11 +111,12 @@ export class GameStateService {
     for (let y = 0; y < grid.length; y++) {
       for (let x = 0; x < grid[y].length; x++) {
         const tile = grid[y][x];
+        const tileColors = this.themeService.getTileColors();
         this.renderingService.drawTile(
           x,
           y,
-          GAME_CONSTANTS.COLORS.TILE_FILL,
-          GAME_CONSTANTS.COLORS.TILE_BORDER,
+          tileColors.default,
+          tileColors.border,
           tile
         );
         if (tile.hasSchool) {

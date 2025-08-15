@@ -91,55 +91,55 @@ export class ThemeService {
     ]
   };
 
-  // Dark theme - modern, not too contrasty, warm and cozy
+  // Dark theme - soft, easy on the eyes, minimal eye strain
   private darkTheme: ColorTheme = {
-    background: '#0f172a',      // Deep blue-black
-    surface: '#1e293b',        // Dark slate
+    background: '#1a1a1a',         // Soft dark gray instead of blue-black
+    surface: '#2d2d2d',           // Warm dark gray for surfaces
     
-    tileDefault: 0x334155,      // Slate gray
-    tileBorder: 0x475569,       // Lighter slate
+    tileDefault: 0x2a2a2a,         // Very subtle gray for default tiles
+    tileBorder: 0x404040,          // Soft, muted border - not too bright
     
-    primary: '#60a5fa',         // Bright blue
-    secondary: '#38bdf8',       // Cyan
-    accent: '#34d399',          // Emerald
-    text: '#f1f5f9',            // Light gray
-    textSecondary: '#cbd5e1',   // Medium light gray
+    primary: '#6b7280',            // Muted blue-gray
+    secondary: '#9ca3af',          // Light gray
+    accent: '#10b981',             // Keep the green accent for important actions
+    text: '#e5e5e5',              // Soft white, not pure white
+    textSecondary: '#a1a1aa',      // Muted gray text
     
-    buttonBg: '#334155',
-    buttonHover: '#475569',
-    buttonActive: '#64748b',
-    buttonDisabled: '#1e293b',
+    buttonBg: '#2d2d2d',
+    buttonHover: '#3a3a3a',
+    buttonActive: '#454545',
+    buttonDisabled: '#1f1f1f',
     
-    // Vibrant but not harsh colors for dark mode
+    // Soft, muted colors for dark mode - easy on the eyes
     municipalities: [
-      0x6ee7b7,  // Bright mint
-      0x7dd3fc,  // Bright sky
-      0xfbbf24,  // Bright yellow
-      0xf472b6,  // Bright pink
-      0xa78bfa,  // Bright purple
-      0xfb7185,  // Bright coral
-      0x34d399,  // Bright emerald
-      0x60a5fa   // Bright blue
+      0x4ade80,  // Soft green
+      0x60a5fa,  // Soft blue
+      0xfbbf24,  // Warm yellow
+      0xf472b6,  // Soft pink
+      0xa78bfa,  // Soft purple
+      0xff7875,  // Soft coral
+      0x34d399,  // Soft emerald
+      0x38bdf8   // Soft cyan
     ],
     areas: [
-      0x4ade80,  // Medium green
-      0x60a5fa,  // Medium blue
-      0xf59e0b,  // Medium yellow
+      0x22c55e,  // Medium green
+      0x3b82f6,  // Medium blue
+      0xf59e0b,  // Medium amber
       0xec4899,  // Medium pink
       0x8b5cf6,  // Medium purple
       0xef4444,  // Medium red
-      0x10b981,  // Medium emerald
-      0x3b82f6   // Medium blue
+      0x059669,  // Medium emerald
+      0x0ea5e9   // Medium sky
     ],
     units: [
-      0x22c55e,  // Darker green
-      0x3b82f6,  // Darker blue
-      0xd97706,  // Darker yellow
+      0x16a34a,  // Darker green
+      0x2563eb,  // Darker blue
+      0xd97706,  // Darker amber
       0xdb2777,  // Darker pink
       0x7c3aed,  // Darker purple
       0xdc2626,  // Darker red
-      0x059669,  // Darker emerald
-      0x2563eb   // Darker blue
+      0x047857,  // Darker emerald
+      0x0284c7   // Darker sky
     ]
   };
 

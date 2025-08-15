@@ -82,7 +82,7 @@
 
 /* Ensure the canvas updates with theme changes */
 :host ::ng-deep canvas[data-theme="dark"] {
-  background: #0f172a !important;
+  background: #1a1a1a !important;
 }
 
 :host ::ng-deep canvas[data-theme="light"] {
