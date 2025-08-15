@@ -168,11 +168,28 @@ export class RenderingService {
   }
 
   screenToGrid(sx: number, sy: number): { x: number; y: number } {
-    sx -= this.config.mapOffsetX;
-    sy -= this.config.mapOffsetY;
+    // Account for zoom: reverse the same transformation used in gridToScreen
+    const z = this.zoom;
     
-    const x = Math.floor((sx / (this.config.tileWidth / 2) + sy / (this.config.tileHeight / 2)) / 2);
-    const y = Math.floor((sy / (this.config.tileHeight / 2) - sx / (this.config.tileWidth / 2)) / 2);
+    // Calculate the grid center (same as in gridToScreen)
+    const gridSize = GAME_CONSTANTS.GRID.SIZE;
+    const centerX = (gridSize - 1) / 2;
+    const centerY = (gridSize - 1) / 2;
+    
+    // Calculate center position in screen coordinates (same as in gridToScreen)
+    const centerBaseX = this.config.mapOffsetX + (centerX - centerY) * (this.config.tileWidth / 2);
+    const centerBaseY = this.config.mapOffsetY + (centerX + centerY) * (this.config.tileHeight / 2);
+    
+    // Reverse the zoom transformation: unscale relative to grid center
+    const unzoomedX = centerBaseX + (sx - centerBaseX) / z;
+    const unzoomedY = centerBaseY + (sy - centerBaseY) / z;
+    
+    // Now convert using the original coordinate system
+    const adjustedX = unzoomedX - this.config.mapOffsetX;
+    const adjustedY = unzoomedY - this.config.mapOffsetY;
+    
+    const x = Math.floor((adjustedX / (this.config.tileWidth / 2) + adjustedY / (this.config.tileHeight / 2)) / 2);
+    const y = Math.floor((adjustedY / (this.config.tileHeight / 2) - adjustedX / (this.config.tileWidth / 2)) / 2);
     
     return { x, y };
   }
