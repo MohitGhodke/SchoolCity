@@ -1,0 +1,211 @@
+import { Injectable } from '@angular/core';
+
+export interface MunicipalityDefinition {
+  id: string;
+  name: string;
+  baseColor: number; // Hex number for Phaser
+  baseColorString: string; // Hex string for CSS
+  areas: AreaDefinition[];
+}
+
+export interface AreaDefinition {
+  id: string;
+  name: string;
+  municipalityId: string;
+  color: number; // Hex number for Phaser
+  colorString: string; // Hex string for CSS
+  units: UnitDefinition[];
+}
+
+export interface UnitDefinition {
+  id: string;
+  name: string;
+  areaId: string;
+  municipalityId: string;
+  color: number; // Hex number for Phaser
+  colorString: string; // Hex string for CSS
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class MunicipalityManagerService {
+  private municipalities: MunicipalityDefinition[] = [];
+  private counter = 1;
+
+  // Base colors for municipalities (hex numbers for Phaser)
+  private baseColors = [
+    0x4CAF50, // Green
+    0x2196F3, // Blue  
+    0xFF9800, // Orange
+    0x9C27B0, // Purple
+    0xF44336, // Red
+    0x607D8B, // Blue Grey
+    0x795548, // Brown
+    0x009688, // Teal
+  ];
+
+  constructor() {
+    // Initialize with first municipality
+    this.addMunicipality();
+  }
+
+  getMunicipalities(): MunicipalityDefinition[] {
+    return this.municipalities;
+  }
+
+  addMunicipality(): MunicipalityDefinition {
+    const baseColor = this.baseColors[(this.municipalities.length) % this.baseColors.length];
+    const municipality: MunicipalityDefinition = {
+      id: `municipality-${this.counter}`,
+      name: `Municipality ${this.counter}`,
+      baseColor: baseColor,
+      baseColorString: this.hexNumberToString(baseColor),
+      areas: []
+    };
+    
+    this.municipalities.push(municipality);
+    this.counter++;
+    return municipality;
+  }
+
+  addArea(municipalityId: string): AreaDefinition | null {
+    const municipality = this.municipalities.find(m => m.id === municipalityId);
+    if (!municipality) return null;
+
+    const areaIndex = municipality.areas.length + 1;
+    const areaShade = this.generateShadeFromNumber(municipality.baseColor, 0.8); // Lighter shade
+    const area: AreaDefinition = {
+      id: `${municipalityId}-area-${areaIndex}`,
+      name: `Area ${areaIndex}`,
+      municipalityId: municipalityId,
+      color: areaShade.color,
+      colorString: areaShade.colorString,
+      units: []
+    };
+
+    municipality.areas.push(area);
+    return area;
+  }
+
+  addUnit(municipalityId: string, areaId: string): UnitDefinition | null {
+    const municipality = this.municipalities.find(m => m.id === municipalityId);
+    const area = municipality?.areas.find(a => a.id === areaId);
+    if (!municipality || !area) return null;
+
+    const unitIndex = area.units.length + 1;
+    const unitShade = this.generateShadeFromNumber(municipality.baseColor, 0.6); // Darker shade
+    const unit: UnitDefinition = {
+      id: `${areaId}-unit-${unitIndex}`,
+      name: `Unit ${unitIndex}`,
+      areaId: areaId,
+      municipalityId: municipalityId,
+      color: unitShade.color,
+      colorString: unitShade.colorString
+    };
+
+    area.units.push(unit);
+    return unit;
+  }
+
+  // Helper functions to convert between hex formats
+  private hexNumberToString(hexNumber: number): string {
+    return `#${hexNumber.toString(16).padStart(6, '0')}`;
+  }
+
+  private hexStringToNumber(hexString: string): number {
+    return parseInt(hexString.replace('#', ''), 16);
+  }
+
+  // Generate a lighter or darker shade of a color (works with hex numbers)
+  private generateShadeFromNumber(colorNumber: number, factor: number): { color: number, colorString: string } {
+    // Convert hex number to RGB
+    const r = (colorNumber >> 16) & 255;
+    const g = (colorNumber >> 8) & 255;
+    const b = colorNumber & 255;
+
+    // Apply factor (>1 for lighter, <1 for darker)
+    const newR = Math.round(Math.min(255, r + (255 - r) * (factor - 1)));
+    const newG = Math.round(Math.min(255, g + (255 - g) * (factor - 1)));
+    const newB = Math.round(Math.min(255, b + (255 - b) * (factor - 1)));
+
+    // Convert back to hex number and string
+    const newColorNumber = (newR << 16) | (newG << 8) | newB;
+    const newColorString = `#${newColorNumber.toString(16).padStart(6, '0')}`;
+    
+    return { color: newColorNumber, colorString: newColorString };
+  }
+
+  // Get all boundary options for UI
+  getAllBoundaryOptions(): Array<{id: string, label: string, color: string, type: 'municipality' | 'area' | 'unit'}> {
+    const options: Array<{id: string, label: string, color: string, type: 'municipality' | 'area' | 'unit'}> = [];
+
+    this.municipalities.forEach(municipality => {
+      // Add municipality
+      options.push({
+        id: municipality.id,
+        label: municipality.name,
+        color: municipality.baseColorString,
+        type: 'municipality'
+      });
+
+      // Add areas
+      municipality.areas.forEach(area => {
+        options.push({
+          id: area.id,
+          label: `${area.name} (${municipality.name})`,
+          color: area.colorString,
+          type: 'area'
+        });
+
+        // Add units
+        area.units.forEach(unit => {
+          options.push({
+            id: unit.id,
+            label: `${unit.name} (${area.name})`,
+            color: unit.colorString,
+            type: 'unit'
+          });
+        });
+      });
+    });
+
+    return options;
+  }
+
+  getMunicipalityById(id: string): MunicipalityDefinition | undefined {
+    return this.municipalities.find(m => m.id === id);
+  }
+
+  getAreaById(areaId: string): AreaDefinition | undefined {
+    for (const municipality of this.municipalities) {
+      const area = municipality.areas.find(a => a.id === areaId);
+      if (area) return area;
+    }
+    return undefined;
+  }
+
+  getUnitById(unitId: string): UnitDefinition | undefined {
+    for (const municipality of this.municipalities) {
+      for (const area of municipality.areas) {
+        const unit = area.units.find(u => u.id === unitId);
+        if (unit) return unit;
+      }
+    }
+    return undefined;
+  }
+
+  // Get color for rendering (returns hex number for Phaser)
+  getColorForBoundary(boundaryId: string): number {
+    const municipality = this.getMunicipalityById(boundaryId);
+    if (municipality) return municipality.baseColor;
+
+    const area = this.getAreaById(boundaryId);
+    if (area) return area.color;
+
+    const unit = this.getUnitById(boundaryId);
+    if (unit) return unit.color;
+
+    return 0xcccccc; // Default color as hex number
+  }
+}

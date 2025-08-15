@@ -37,9 +37,9 @@ export class MainSceneFactory {
 
           // Listen for boundary selection from Angular
           (window as any).setSelectedBoundary = (boundaryId: string) => {
-            if (boundaryId === 'school') {
+            if (boundaryId.startsWith('school:')) {
               this.isPlacingSchool = true;
-              this.selectedBoundary = null;
+              this.selectedBoundary = boundaryId; // Keep the full "school:unitId" format
             } else {
               this.isPlacingSchool = false;
               this.selectedBoundary = boundaryId;
@@ -58,11 +58,10 @@ export class MainSceneFactory {
               const { x, y } = this.renderingService.screenToGrid(pointer.x, pointer.y);
               const school = this.gameStateService["schoolService"].getSchoolAtPosition(x, y);
               if (school && this.gameEventService) {
-                console.log('[Phaser] School tile clicked:', { ...school, x, y });
                 this.gameEventService.schoolClicked$.next({ ...school, x, y });
-              } else {
-                this.gameStateService.handleTileClick(pointer.x, pointer.y);
               }
+              // DO NOT place schools when no boundary is selected - that was the bug!
+              // Schools should only be placed when in explicit school placement mode
             }
           });
           (this as any)['input'].on('pointermove', (pointer: any) => {
@@ -75,44 +74,84 @@ export class MainSceneFactory {
           });
         }
 
-        assignBoundaryAt(screenX: number, screenY: number) {
-          const { x, y } = this.renderingService.screenToGrid(screenX, screenY);
-          const gridService = (this.gameStateService as any).gridService;
-          if (gridService && gridService.isValidPosition(x, y)) {
+          assignBoundaryAt(screenX: number, screenY: number) {
+            const { x, y } = this.renderingService.screenToGrid(screenX, screenY);
+            const gridService = (this.gameStateService as any).gridService;
+            
+            if (gridService && gridService.isValidPosition(x, y)) {
             const tile = gridService.getTile(x, y);
+            
             if (tile) {
-              // Assign boundaries with strict hierarchy
-              if (this.selectedBoundary?.startsWith('municipality')) {
+              // Assign boundaries with strict hierarchy - CHECK UNITS FIRST!
+              if (this.selectedBoundary?.includes('-unit-')) {
+                // For unit assignment, ensure proper hierarchy but be more flexible
+                const unitId = this.selectedBoundary;
+                const parts = unitId.split('-');
+                
+                if (parts.length >= 6) { // municipality-X-area-Y-unit-Z
+                  const municipalityId = `${parts[0]}-${parts[1]}`;
+                  const areaId = `${parts[0]}-${parts[1]}-${parts[2]}-${parts[3]}`;
+                  
+                  // Always set the full hierarchy when assigning a unit - don't check conditions
+                  tile.municipalityId = municipalityId;
+                  tile.areaId = areaId;
+                  tile.unitId = unitId;
+                }
+              } else if (this.selectedBoundary?.includes('-area-') && !this.selectedBoundary.includes('-unit-')) {
+                console.log('� Processing area assignment...');
+                // Assign area - but be more flexible about requirements
+                if (tile.municipalityId && !tile.unitId) {
+                  tile.areaId = this.selectedBoundary;
+
+                } else {
+
+                }
+              } else if (this.selectedBoundary?.startsWith('municipality') && !this.selectedBoundary.includes('area') && !this.selectedBoundary.includes('unit')) {
+
                 // Only assign municipality if not already set or to change
                 if (tile.municipalityId !== this.selectedBoundary) {
                   tile.municipalityId = this.selectedBoundary;
                   tile.areaId = '';
                   tile.unitId = '';
+
                 }
-              } else if (this.selectedBoundary?.startsWith('area')) {
-                // Only assign area if tile has a municipality and no area/unit
-                if (tile.municipalityId && !tile.areaId && !tile.unitId) {
-                  tile.areaId = this.selectedBoundary;
-                }
-              } else if (this.selectedBoundary?.startsWith('unit')) {
-                // Only assign unit if tile has an area and no unit
-                if (tile.areaId && !tile.unitId) {
-                  tile.unitId = this.selectedBoundary;
+              } else {
+
+                // Clear assignment
+                if (this.selectedBoundary === '') {
+                  tile.municipalityId = '';
+                  tile.areaId = '';
+                  tile.unitId = '';
+
                 }
               }
+              
+
               this.gameStateService.renderGame();
             }
+            } else {
+
+            }
           }
-        }
 
         tryPlaceSchoolAt(screenX: number, screenY: number) {
           const { x, y } = this.renderingService.screenToGrid(screenX, screenY);
           const gridService = (this.gameStateService as any).gridService;
+          
           if (gridService && gridService.isValidPosition(x, y)) {
             const tile = gridService.getTile(x, y);
-            // Only allow school placement if unit is assigned and no school exists
-            if (tile && tile.unitId && !tile.hasSchool) {
+            
+            // Extract the unit ID from the selectedBoundary (format: "school:unitId")
+            const unitId = this.selectedBoundary?.replace('school:', '') || '';
+            
+            // Only allow school placement if:
+            // 1. Tile has the specific unit ID that was selected
+            // 2. No school already exists on this tile
+            if (tile && tile.unitId === unitId && !tile.hasSchool) {
+
               this.gameStateService.handleTileClick(screenX, screenY);
+            } else {
+              // School placement blocked - either unit ID mismatch or tile already has school
             }
           }
         }

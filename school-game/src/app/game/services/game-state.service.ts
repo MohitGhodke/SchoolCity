@@ -152,8 +152,6 @@ export class GameStateService {
             }
           );
         }
-        // Print the complete hierarchy to the console
-        console.log('[EducationHierarchy] Current hierarchy:', JSON.stringify(this.educationHierarchyService.getMunicipalities(), null, 2));
         this.renderGame();
       }
     }

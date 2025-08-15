@@ -3,6 +3,7 @@
 
 import { Injectable } from '@angular/core';
 import { GAME_CONSTANTS } from '../constants/game-constants';
+import { MunicipalityManagerService } from './municipality-manager.service';
 import { Tile } from './grid.service';
 
 export interface RenderConfig {
@@ -31,7 +32,7 @@ export class RenderingService {
 
 
 
-  constructor() {
+  constructor(private municipalityManager: MunicipalityManagerService) {
     this.config = {
       tileWidth: GAME_CONSTANTS.GRID.TILE_WIDTH,
       tileHeight: GAME_CONSTANTS.GRID.TILE_HEIGHT,
@@ -77,13 +78,16 @@ export class RenderingService {
     // Use the most specific boundary color: unit > area > municipality
     let fillColor = color;
     if (tile) {
-      if (tile.unitId === 'unit-1') fillColor = GAME_CONSTANTS.COLORS.UNIT_1;
-      else if (tile.unitId === 'unit-2') fillColor = GAME_CONSTANTS.COLORS.UNIT_2;
-      else if (tile.areaId === 'area-1') fillColor = GAME_CONSTANTS.COLORS.AREA_1;
-      else if (tile.areaId === 'area-2') fillColor = GAME_CONSTANTS.COLORS.AREA_2;
-      else if (tile.municipalityId === 'municipality-1') fillColor = GAME_CONSTANTS.COLORS.MUNICIPALITY_1;
-      else if (tile.municipalityId === 'municipality-2') fillColor = GAME_CONSTANTS.COLORS.MUNICIPALITY_2;
-      else fillColor = GAME_CONSTANTS.COLORS.TILE_FILL; // Always use default if no boundary
+      // Use dynamic municipality manager for colors
+      if (tile.unitId) {
+        fillColor = this.municipalityManager.getColorForBoundary(tile.unitId);
+      } else if (tile.areaId) {
+        fillColor = this.municipalityManager.getColorForBoundary(tile.areaId);
+      } else if (tile.municipalityId) {
+        fillColor = this.municipalityManager.getColorForBoundary(tile.municipalityId);
+      } else {
+        fillColor = GAME_CONSTANTS.COLORS.TILE_FILL; // Default if no boundary
+      }
     }
 
     const { sx, sy } = this.gridToScreen(x, y);
