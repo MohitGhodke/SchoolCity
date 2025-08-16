@@ -36,7 +36,6 @@ export class GameStateService {
     // Clear localStorage for a complete fresh start
     if (isPlatformBrowser(this.platformId)) {
       this.gameDataService.deleteSavedData();
-      console.log('🧹 Clean slate: All game data and local storage cleared');
     }
     
     // Reset hierarchy initialization flag
@@ -234,9 +233,8 @@ export class GameStateService {
         }
         
         this.renderGame();
-        console.log(`🏫 Placed ${school.type} school: ${school.name} (${school.size.width}x${school.size.height})`);
       } else {
-        console.log('❌ Cannot place school - insufficient space or invalid tile type');
+        console.error('❌ Cannot place school - insufficient space or invalid tile type');
       }
     }
   }

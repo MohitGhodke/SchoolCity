@@ -46,7 +46,6 @@ export class RenderingService {
 
   setScene(scene: any): void {
     this.scene = scene;
-    console.log('Rendering service connected to scene');
   }
 
   setConfig(config: Partial<RenderConfig>): void {
@@ -71,16 +70,6 @@ export class RenderingService {
     // Center the diamond in the canvas
     this.config.mapOffsetX = canvasWidth / 2;
     this.config.mapOffsetY = (canvasHeight - totalGridHeight) / 2 + (tileHeight / 2);
-    
-    console.log('Grid centered for isometric:', {
-      canvasWidth,
-      canvasHeight,
-      gridSize,
-      totalGridWidth,
-      totalGridHeight,
-      offsetX: this.config.mapOffsetX,
-      offsetY: this.config.mapOffsetY
-    });
   }
 
   clearGraphics(): void {
@@ -95,7 +84,6 @@ export class RenderingService {
         child.texture && child.texture.key === 'school'
       );
       schoolSprites.forEach((sprite: any) => sprite.destroy());
-      console.log(`Cleared ${schoolSprites.length} school sprites`);
     }
   }
 
@@ -182,8 +170,6 @@ export class RenderingService {
     
     // Add depth for proper layering
     sprite.setDepth(screenY + 1000); // Higher depth to ensure schools render above tiles
-    
-    console.log('School sprite placed at', screenX, screenY, 'with scale:', this.zoom * 0.035);
     
     return sprite;
   }

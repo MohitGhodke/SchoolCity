@@ -159,17 +159,13 @@ export class SchoolService {
    * Returns the top-left corner position of the school area
    */
   private findBestSchoolPosition(clickX: number, clickY: number, size: { width: number; height: number }): { x: number; y: number } | null {
-    console.log(`🔍 Finding best position for ${size.width}x${size.height} school around clicked tile (${clickX}, ${clickY})`);
-    
     // Get the unit ID of the clicked tile - school must be within the same unit
     const clickedTile = this.gridService.getTile(clickX, clickY);
     if (!clickedTile || !clickedTile.unitId) {
-      console.log(`  ❌ Clicked tile has no unitId`);
       return null;
     }
     
     const requiredUnitId = clickedTile.unitId;
-    console.log(`  📍 Clicked tile unit: ${requiredUnitId}`);
     
     // Check all possible positions where the clicked tile could be part of the school
     // For a 2x2 school, the clicked tile could be at positions (0,0), (0,1), (1,0), or (1,1) within the school
@@ -183,13 +179,11 @@ export class SchoolService {
         
         if (this.canPlaceSchoolInSameUnit(topLeftX, topLeftY, size, requiredUnitId)) {
           possiblePositions.push({ x: topLeftX, y: topLeftY });
-          console.log(`  ✅ Valid position found: (${topLeftX}, ${topLeftY}) with clicked tile at offset (${dx}, ${dy})`);
         }
       }
     }
     
     if (possiblePositions.length === 0) {
-      console.log(`  ❌ No valid positions found for ${size.width}x${size.height} school around (${clickX}, ${clickY}) within unit ${requiredUnitId}`);
       return null;
     }
     
@@ -212,7 +206,6 @@ export class SchoolService {
       }
     }
     
-    console.log(`  🎯 Best position selected: (${bestPosition.x}, ${bestPosition.y}) for ${size.width}x${size.height} school`);
     return bestPosition;
   }
 
@@ -220,47 +213,34 @@ export class SchoolService {
    * Check if a school can be placed at the position with all tiles in the same unit
    */
   private canPlaceSchoolInSameUnit(x: number, y: number, size: { width: number; height: number }, requiredUnitId: string): boolean {
-    console.log(`    🔍 Checking if ${size.width}x${size.height} school can be placed at (${x}, ${y}) in unit ${requiredUnitId}`);
-    
     // Check if all tiles in the school area are valid, available, and compatible with the unit
     for (let dx = 0; dx < size.width; dx++) {
       for (let dy = 0; dy < size.height; dy++) {
         const checkX = x + dx;
         const checkY = y + dy;
         
-        console.log(`      Checking tile (${checkX}, ${checkY})`);
-        
         // Check if position is within grid bounds
         if (!this.gridService.isValidPosition(checkX, checkY)) {
-          console.log(`      ❌ Tile (${checkX}, ${checkY}) is out of bounds`);
           return false;
         }
         
         // Check if position already has a school
         if (this.gridService.hasSchool(checkX, checkY)) {
-          console.log(`      ❌ Tile (${checkX}, ${checkY}) already has a school`);
           return false;
         }
         
         // Check if tile is compatible with the unit
         const tile = this.gridService.getTile(checkX, checkY);
         if (!tile) {
-          console.log(`      ❌ Tile (${checkX}, ${checkY}) not found`);
           return false;
         }
-        
-        console.log(`      📍 Tile (${checkX}, ${checkY}) has unitId: '${tile.unitId}'`);
         
         // Require that all tiles belong to the same non-empty unit
         if (tile.unitId !== requiredUnitId || !tile.unitId) {
-          console.log(`      ❌ Tile (${checkX}, ${checkY}) unit mismatch: '${tile.unitId}' vs required '${requiredUnitId}'`);
           return false;
         }
-        
-        console.log(`      ✅ Tile (${checkX}, ${checkY}) is compatible (same unit)`);
       }
     }
-    console.log(`    ✅ All tiles valid for ${size.width}x${size.height} school at (${x}, ${y})`);
     return true;
   }
 

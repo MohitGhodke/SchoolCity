@@ -52,7 +52,6 @@ export class GameDataService {
       const jsonData = JSON.stringify(saveData, null, 2);
       
       localStorage.setItem(this.SAVE_KEY, jsonData);
-      console.log('✅ Game data saved successfully', saveData.metadata);
       return true;
     } catch (error) {
       console.error('❌ Failed to save game data:', error);
@@ -72,7 +71,6 @@ export class GameDataService {
     try {
       const savedData = localStorage.getItem(this.SAVE_KEY);
       if (!savedData) {
-        console.log('📭 No saved game data found');
         return false;
       }
 
@@ -86,7 +84,6 @@ export class GameDataService {
 
       // Load the data into services
       this.restoreGameState(gameData);
-      console.log('✅ Game data loaded successfully', gameData.metadata);
       return true;
     } catch (error) {
       console.error('❌ Failed to load game data:', error);
@@ -139,7 +136,6 @@ export class GameDataService {
 
     try {
       localStorage.removeItem(this.SAVE_KEY);
-      console.log('🗑️ Saved game data deleted');
       return true;
     } catch (error) {
       console.error('Failed to delete save data:', error);
@@ -174,7 +170,6 @@ export class GameDataService {
 
       this.restoreGameState(gameData);
       this.saveGameData(); // Save to localStorage as well
-      console.log('✅ Game data imported successfully');
       return true;
     } catch (error) {
       console.error('❌ Failed to import game data:', error);
@@ -234,7 +229,6 @@ export class GameDataService {
     // Don't restore theme - let ThemeService handle its own persistence
     // The theme is already loaded from localStorage in ThemeService constructor
     // and we don't want to override the user's current theme preference
-    console.log('ℹ️ Theme persistence is handled by ThemeService');
   }
 
   /**

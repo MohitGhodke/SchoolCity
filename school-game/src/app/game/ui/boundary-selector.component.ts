@@ -265,10 +265,6 @@ export class BoundarySelectorComponent {
 
   enterSchoolMode() {
     const unitId = this.getSelectedOrFirstUnitId();
-    console.log('🏫 Entering school mode:', {
-      selectedUnitId: unitId,
-      allUnits: this.getAvailableUnits().map(u => ({ id: u.id, name: u.name }))
-    });
     if (unitId) {
       this.selectedUnitForSchool = unitId;
       this.isSchoolMode = true;

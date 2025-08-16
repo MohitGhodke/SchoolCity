@@ -88,8 +88,6 @@ export class RenderingService {
     // Convert to reusable texture
     this.buildingTexture = graphics.generateTexture('building', 64, 64);
     graphics.destroy();
-    
-    console.log('Simple building sprite created');
   }
 
   setConfig(config: Partial<RenderConfig>): void {

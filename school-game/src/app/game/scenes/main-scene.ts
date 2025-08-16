@@ -5,7 +5,6 @@ import { GameEventService } from '../services/game-event.service';
 
 export class MainSceneFactory {
   static createScene(gameStateService: GameStateService, renderingService: RenderingService, educationHierarchyService: EducationHierarchyService, gameEventService: GameEventService): any {
-    console.log('🏗️ MainSceneFactory.createScene called');
     // Return a function that will create the scene class when called
     return function(Phaser: any) {
       return class extends Phaser.Scene {
@@ -27,7 +26,6 @@ export class MainSceneFactory {
 
         constructor() {
           super({ key: 'MainScene' });
-          console.log('🎮 MainScene constructor called');
           this.gameStateService = gameStateService;
           this.renderingService = renderingService;
           this.educationHierarchyService = educationHierarchyService;
@@ -37,8 +35,6 @@ export class MainSceneFactory {
           
           if (!this.municipalityManager) {
             console.error('❌ MunicipalityManager not found in RenderingService!');
-          } else {
-            console.log('✅ MunicipalityManager successfully accessed');
           }
         }
 
@@ -48,7 +44,7 @@ export class MainSceneFactory {
           
           // Handle loading errors
           (this as any)['load'].on('loaderror', (file: any) => {
-            console.log('Failed to load:', file.key);
+            console.error('Failed to load:', file.key);
             if (file.key === 'school') {
               // Create a fallback texture if PNG loading fails
               this.createFallbackTexture();
@@ -75,8 +71,6 @@ export class MainSceneFactory {
           
           graphics.generateTexture('school', 64, 64);
           graphics.destroy();
-          
-          console.log('Fallback school texture created');
         }
 
         create(): void {
@@ -169,7 +163,6 @@ export class MainSceneFactory {
                   tile.unitId = unitId;
                 }
               } else if (this.selectedBoundary?.includes('-area-') && !this.selectedBoundary.includes('-unit-')) {
-                console.log('� Processing area assignment...');
                 // Assign area - but be more flexible about requirements
                 if (tile.municipalityId && !tile.unitId) {
                   tile.areaId = this.selectedBoundary;
@@ -220,7 +213,6 @@ export class MainSceneFactory {
               if (schoolService) {
                 const school = schoolService.placeSchoolAuto(x, y);
                 if (school) {
-                  console.log('✅ School placed successfully:', school.name, 'at position', x, y);
                   // Re-render the game after placing school
                   this.gameStateService.renderGame();
                   
@@ -229,15 +221,15 @@ export class MainSceneFactory {
                     (window as any).autoSaveGame();
                   }
                 } else {
-                  console.log('❌ Could not place school at position', x, y);
+                  console.error('❌ Could not place school at position', x, y);
                 }
               }
             } else {
               // School placement blocked - either no unit or area already has school
               if (!tile.unitId) {
-                console.log('❌ Cannot place school - tile is not within a unit boundary');
+                console.error('❌ Cannot place school - tile is not within a unit boundary');
               } else if (tile.hasSchool) {
-                console.log('❌ Cannot place school - area already has a school');
+                console.error('❌ Cannot place school - area already has a school');
               }
             }
           }
@@ -312,54 +304,29 @@ export class MainSceneFactory {
         }
 
         paintMunicipality(tile: any): void {
-          console.log('🏛️ paintMunicipality called - tile before:', { 
-            municipalityId: tile.municipalityId, 
-            areaId: tile.areaId, 
-            unitId: tile.unitId 
-          });
-          
           if (!tile.municipalityId) {
             // Create a new municipality only if we don't have an active one
             if (!this.currentMunicipalityId) {
-              console.log('🏛️ Creating new municipality');
               this.municipalityManager.addMunicipality();
               const municipalities = this.municipalityManager.getMunicipalities();
               const newMunicipality = municipalities[municipalities.length - 1];
               this.currentMunicipalityId = newMunicipality.id;
-              console.log('🏛️ New municipality created:', this.currentMunicipalityId);
             }
             
             // Assign the current active municipality to this tile
             tile.municipalityId = this.currentMunicipalityId;
             tile.areaId = '';
             tile.unitId = '';
-            console.log('🏛️ Municipality assigned to tile:', tile.municipalityId);
-          } else {
-            console.log('🏛️ paintMunicipality skipped - tile already has municipality:', tile.municipalityId);
           }
-          
-          console.log('🏛️ paintMunicipality completed - tile after:', { 
-            municipalityId: tile.municipalityId, 
-            areaId: tile.areaId, 
-            unitId: tile.unitId 
-          });
         }
 
         paintArea(tile: any): void {
-          console.log('🎨 paintArea called - tile before:', { 
-            municipalityId: tile.municipalityId, 
-            areaId: tile.areaId, 
-            unitId: tile.unitId 
-          });
-          
           if (tile.municipalityId && !tile.unitId) {
             // Create a new area only if we don't have an active one for this municipality
             if (!this.currentAreaId) {
-              console.log('🎨 Creating new area for municipality:', tile.municipalityId);
               const newArea = this.municipalityManager.addArea(tile.municipalityId);
               if (newArea) {
                 this.currentAreaId = newArea.id;
-                console.log('🎨 New area created:', this.currentAreaId);
               }
             }
             
@@ -367,50 +334,24 @@ export class MainSceneFactory {
             if (this.currentAreaId) {
               // Verify the area belongs to the same municipality
               const area = this.municipalityManager.getAreaById(this.currentAreaId);
-              console.log('🎨 Found area:', area ? area.id : 'null', 'for municipality:', area ? area.municipalityId : 'null');
               if (area && area.municipalityId === tile.municipalityId) {
                 tile.areaId = this.currentAreaId;
                 tile.unitId = ''; // Clear unit when assigning area
-                console.log('🎨 Area assigned to tile:', tile.areaId);
-              } else {
-                console.log('🎨 Area assignment failed - municipality mismatch');
               }
             }
-          } else {
-            console.log('🎨 paintArea skipped - conditions not met:', {
-              hasMunicipality: !!tile.municipalityId,
-              hasUnit: !!tile.unitId
-            });
           }
-          
-          console.log('🎨 paintArea completed - tile after:', { 
-            municipalityId: tile.municipalityId, 
-            areaId: tile.areaId, 
-            unitId: tile.unitId 
-          });
         }
 
         paintUnit(tile: any): void {
-          console.log('🔲 paintUnit called - tile before:', { 
-            municipalityId: tile.municipalityId, 
-            areaId: tile.areaId, 
-            unitId: tile.unitId 
-          });
-          
           if (tile.areaId && !tile.unitId) {
             // Create a new unit only if we don't have an active one for this area
             if (!this.currentUnitId) {
-              console.log('🔲 Creating new unit for area:', tile.areaId);
               const area = this.municipalityManager.getAreaById(tile.areaId);
               if (area) {
-                console.log('🔲 Found area:', area.id, 'in municipality:', area.municipalityId);
                 const newUnit = this.municipalityManager.addUnit(area.municipalityId, tile.areaId);
                 if (newUnit) {
                   this.currentUnitId = newUnit.id;
-                  console.log('🔲 New unit created:', this.currentUnitId);
                 }
-              } else {
-                console.log('🔲 Area not found for ID:', tile.areaId);
               }
             }
             
@@ -418,27 +359,11 @@ export class MainSceneFactory {
             if (this.currentUnitId) {
               // Verify the unit belongs to the same area
               const unit = this.municipalityManager.getUnitById(this.currentUnitId);
-              console.log('🔲 Found unit:', unit ? unit.id : 'null', 'for area:', unit ? unit.areaId : 'null');
               if (unit && unit.areaId === tile.areaId) {
                 tile.unitId = this.currentUnitId;
-                console.log('🔲 Unit assigned to tile:', tile.unitId);
-              } else {
-                console.log('🔲 Unit assignment failed - area mismatch');
               }
             }
-          } else {
-            console.log('🔲 paintUnit skipped - conditions not met:', {
-              hasArea: !!tile.areaId,
-              hasUnit: !!tile.unitId,
-              areaValue: tile.areaId
-            });
           }
-          
-          console.log('🔲 paintUnit completed - tile after:', { 
-            municipalityId: tile.municipalityId, 
-            areaId: tile.areaId, 
-            unitId: tile.unitId 
-          });
         }
 
         paintSchool(tile: any, x: number, y: number): void {
@@ -447,10 +372,8 @@ export class MainSceneFactory {
             const schoolService = (this.gameStateService as any).schoolService;
             if (schoolService) {
               const school = schoolService.placeSchoolAuto(x, y);
-              if (school) {
-                console.log('✅ School placed successfully:', school.name, 'at position', x, y);
-              } else {
-                console.log('❌ Could not place school at position', x, y);
+              if (!school) {
+                console.error('❌ Could not place school at position', x, y);
               }
             }
           }
@@ -468,7 +391,6 @@ export class MainSceneFactory {
             if (schoolService) {
               // Remove school using school service
               schoolService.removeSchool(x, y);
-              console.log('🗑️ School removed from position', x, y);
             }
           }
           
