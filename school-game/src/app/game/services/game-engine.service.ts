@@ -22,21 +22,36 @@ export class GameEngineService {
       throw new Error('Game can only be initialized in browser environment');
     }
 
-    const Phaser = await import('phaser');
+    console.log('🎮 Starting game initialization...');
+    console.log('📦 Loading Phaser...');
     
-    // Create the scene class using the factory function
-    const SceneClass = sceneFactory(Phaser);
-    
-    this.game = new Phaser.Game({
-      type: Phaser.AUTO,
-      width: config.width,
-      height: config.height,
-      parent: container,
-      backgroundColor: config.backgroundColor,
-      scene: [SceneClass]
-    });
+    try {
+      const Phaser = await import('phaser');
+      console.log('✅ Phaser loaded successfully');
+      
+      // Create the scene class using the factory function
+      console.log('🏗️ Creating scene...');
+      const SceneClass = sceneFactory(Phaser);
+      
+      console.log('🎯 Container dimensions:', container.clientWidth, 'x', container.clientHeight);
+      console.log('🎯 Config dimensions:', config.width, 'x', config.height);
+      
+      this.game = new Phaser.Game({
+        type: Phaser.AUTO,
+        width: config.width,
+        height: config.height,
+        parent: container,
+        backgroundColor: config.backgroundColor,
+        scene: [SceneClass]
+      });
 
-    return this.game;
+      console.log('🎮 Phaser game created successfully');
+      return this.game;
+      
+    } catch (error) {
+      console.error('❌ Failed to initialize game:', error);
+      throw error;
+    }
   }
 
   getGame(): any {

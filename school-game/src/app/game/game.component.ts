@@ -298,7 +298,7 @@ export class GameComponent implements OnInit, OnDestroy {
       
       try {
         // Wait a bit for the container to be properly sized
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         // Try to load saved data first
         if (this.hasSavedData) {
@@ -311,6 +311,9 @@ export class GameComponent implements OnInit, OnDestroy {
           console.error('❌ Game container element not found!');
           return;
         }
+        
+        console.log('🎯 Container ready:', container);
+        console.log('🎯 Container size:', container.clientWidth, 'x', container.clientHeight);
         // Use full window size in browser
         const width = window.innerWidth;
         const height = window.innerHeight;
