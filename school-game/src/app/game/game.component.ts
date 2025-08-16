@@ -74,6 +74,9 @@ import { GAME_CONSTANTS } from './constants/game-constants';
         <button class="main-btn" (click)="zoomIn()" aria-label="Zoom In">
           <span class="material-icons-outlined">zoom_in</span>
         </button>
+        <button class="main-btn" (click)="resetCamera()" aria-label="Center View" title="Center View">
+          <span class="material-icons-outlined">center_focus_strong</span>
+        </button>
         <button class="main-btn save-btn" (click)="saveGame()" title="Save Game">
           <span class="material-icons-outlined">save</span>
         </button>
@@ -127,6 +130,16 @@ export class GameComponent implements OnInit, OnDestroy {
   // Touch Input Properties  
   /** Last recorded distance between two touch points for pinch-to-zoom */
   private lastTouchDist: number | null = null;
+
+  // Pan/Drag Properties
+  /** Whether the user is currently panning/dragging the grid */
+  private isPanning: boolean = false;
+  
+  /** Last recorded pointer position for calculating pan delta */
+  private lastPointerPos: { x: number; y: number } | null = null;
+  
+  /** Whether the current gesture is a pan (for preventing clicks during pan) */
+  private gestureIsPan: boolean = false;
 
   // Subscriptions for cleanup
   /** Subscription to school click events from Phaser */
@@ -209,15 +222,34 @@ export class GameComponent implements OnInit, OnDestroy {
   /**
    * Handle mouse wheel zoom events
    */
-  /**
-   * Handle mouse wheel zoom events
-   */
   onWheel(e: WheelEvent): void {
     e.preventDefault();
     const zoomChange = e.deltaY > 0 ? -0.05 : 0.05;
-    const newZoom = this.renderingService!.getZoom() + zoomChange;
-    this.renderingService!.setZoom(newZoom);
-    this.gameStateService!.renderGame();
+    const currentZoom = this.renderingService.getZoom();
+    const newZoom = currentZoom + zoomChange;
+    
+    // Get mouse position relative to canvas
+    const rect = (e.target as HTMLElement).getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    
+    // Calculate the grid point the mouse is over before zoom
+    const beforeGrid = this.renderingService.screenToGrid(mouseX, mouseY);
+    
+    // Apply zoom
+    this.renderingService.setZoom(newZoom);
+    
+    // Calculate where that same grid point is after zoom
+    const afterScreen = this.renderingService.gridToScreen(beforeGrid.x, beforeGrid.y);
+    
+    // Calculate how much to pan to keep the mouse over the same grid point
+    const panDeltaX = mouseX - afterScreen.sx;
+    const panDeltaY = mouseY - afterScreen.sy;
+    
+    // Apply the pan correction
+    this.renderingService.panCamera(panDeltaX, panDeltaY);
+    
+    this.gameStateService.renderGame();
   }
 
   /**
@@ -239,19 +271,33 @@ export class GameComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Handle touch start events for pinch-to-zoom
+   * Reset camera position to center the grid
+   */
+  resetCamera(): void {
+    this.renderingService.resetCameraPosition();
+    this.gameStateService.renderGame();
+  }
+
+  /**
+   * Handle touch start events for pinch-to-zoom and pan gestures
    */
   onTouchStart = (e: TouchEvent): void => {
     if (e.touches.length === 2) {
+      // Two finger gesture - prepare for pinch zoom
       this.lastTouchDist = this.getTouchDist(e);
+      this.isPanning = false;
+    } else if (e.touches.length === 1) {
+      // Single finger gesture - prepare for pan
+      this.startPan(e.touches[0].clientX, e.touches[0].clientY);
     }
   };
 
   /**
-   * Handle touch move events for pinch-to-zoom
+   * Handle touch move events for pinch-to-zoom and pan gestures
    */
   onTouchMove = (e: TouchEvent): void => {
     if (e.touches.length === 2 && this.lastTouchDist !== null) {
+      // Two finger pinch zoom
       e.preventDefault();
       const newDist = this.getTouchDist(e);
       const delta = newDist - this.lastTouchDist;
@@ -262,15 +308,22 @@ export class GameComponent implements OnInit, OnDestroy {
         this.gameStateService.renderGame();
         this.lastTouchDist = newDist;
       }
+    } else if (e.touches.length === 1 && this.isPanning) {
+      // Single finger pan
+      e.preventDefault();
+      this.updatePan(e.touches[0].clientX, e.touches[0].clientY);
     }
   };
 
   /**
-   * Handle touch end events for pinch-to-zoom
+   * Handle touch end events for pinch-to-zoom and pan gestures
    */
   onTouchEnd = (e: TouchEvent): void => {
     if (e.touches.length < 2) {
       this.lastTouchDist = null;
+    }
+    if (e.touches.length === 0) {
+      this.endPan();
     }
   };
 
@@ -282,6 +335,81 @@ export class GameComponent implements OnInit, OnDestroy {
     const dy = e.touches[0].clientY - e.touches[1].clientY;
     return Math.sqrt(dx * dx + dy * dy);
   }
+
+  // Pan/Drag Methods
+
+  /**
+   * Start a pan gesture
+   */
+  startPan(x: number, y: number): void {
+    this.isPanning = true;
+    this.gestureIsPan = false;
+    this.lastPointerPos = { x, y };
+  }
+
+  /**
+   * Update pan position during drag
+   */
+  updatePan(x: number, y: number): void {
+    if (!this.isPanning || !this.lastPointerPos) return;
+    
+    const deltaX = x - this.lastPointerPos.x;
+    const deltaY = y - this.lastPointerPos.y;
+    
+    // If movement is significant, mark this as a pan gesture
+    if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) {
+      this.gestureIsPan = true;
+    }
+    
+    // Apply pan to the rendering service
+    this.renderingService.panCamera(deltaX, deltaY);
+    this.gameStateService.renderGame();
+    
+    // Update last position
+    this.lastPointerPos = { x, y };
+  }
+
+  /**
+   * End a pan gesture
+   */
+  endPan(): void {
+    this.isPanning = false;
+    this.lastPointerPos = null;
+    
+    // Reset gesture flag after a short delay to prevent accidental clicks
+    setTimeout(() => {
+      this.gestureIsPan = false;
+    }, 100);
+  }
+
+  /**
+   * Handle mouse down for pan start
+   */
+  onMouseDown = (e: MouseEvent): void => {
+    // Only start pan on left mouse button and not if it's a right-click or modifier
+    if (e.button === 0 && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+      this.startPan(e.clientX, e.clientY);
+    }
+  };
+
+  /**
+   * Handle mouse move for pan update
+   */
+  onMouseMove = (e: MouseEvent): void => {
+    if (this.isPanning) {
+      e.preventDefault();
+      this.updatePan(e.clientX, e.clientY);
+    }
+  };
+
+  /**
+   * Handle mouse up for pan end
+   */
+  onMouseUp = (e: MouseEvent): void => {
+    if (this.isPanning) {
+      this.endPan();
+    }
+  };
 
   // Lifecycle Methods
 
@@ -360,8 +488,17 @@ export class GameComponent implements OnInit, OnDestroy {
         container.addEventListener('touchstart', this.onTouchStart, { passive: false });
         container.addEventListener('touchmove', this.onTouchMove, { passive: false });
         container.addEventListener('touchend', this.onTouchEnd, { passive: false });
+        
         // Add mouse wheel zoom support
         container.addEventListener('wheel', this.onWheel.bind(this), { passive: false });
+
+        // Add mouse pan/drag support
+        container.addEventListener('mousedown', this.onMouseDown, { passive: false });
+        container.addEventListener('mousemove', this.onMouseMove, { passive: false });
+        container.addEventListener('mouseup', this.onMouseUp, { passive: false });
+        
+        // Add mouse leave to handle when mouse exits the canvas during drag
+        container.addEventListener('mouseleave', this.onMouseUp, { passive: false });
 
         // Listen for school tile clicks from Phaser scene via GameEventService
         this.schoolClickedSubscription = this.gameEventService.schoolClicked$.subscribe((school: any) => {

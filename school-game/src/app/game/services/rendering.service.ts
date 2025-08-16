@@ -66,6 +66,20 @@ export class RenderingService {
   /** Current zoom level (0.5x to 2x) */
   private zoom: number = 1;
 
+  // Camera/Pan State
+  /** Camera X offset for panning */
+  private cameraOffsetX: number = 0;
+  
+  /** Camera Y offset for panning */
+  private cameraOffsetY: number = 0;
+  
+  /** Canvas dimensions for pan boundary calculations */
+  private canvasWidth: number = 0;
+  private canvasHeight: number = 0;
+  
+  /** Grid size for pan boundary calculations */
+  private gridSize: number = 0;
+
   /**
    * Constructor - inject required services and initialize configuration
    */
@@ -90,6 +104,8 @@ export class RenderingService {
    */
   setZoom(zoom: number): void {
     this.zoom = Math.max(0.5, Math.min(zoom, 2)); // Clamp between 0.5x and 2x
+    // Apply pan boundaries after zoom change as grid size changes
+    this.applyPanBoundaries();
   }
 
   /**
@@ -98,6 +114,59 @@ export class RenderingService {
    */
   getZoom(): number {
     return this.zoom;
+  }
+
+  // Camera/Pan Management
+
+  /**
+   * Set camera offset for panning
+   * @param deltaX - Change in X offset
+   * @param deltaY - Change in Y offset
+   */
+  panCamera(deltaX: number, deltaY: number): void {
+    this.cameraOffsetX += deltaX;
+    this.cameraOffsetY += deltaY;
+    
+    // Apply pan boundaries to prevent dragging too far from the grid
+    this.applyPanBoundaries();
+  }
+
+  /**
+   * Reset camera position to center
+   */
+  resetCameraPosition(): void {
+    this.cameraOffsetX = 0;
+    this.cameraOffsetY = 0;
+  }
+
+  /**
+   * Apply boundaries to prevent panning too far from the grid
+   */
+  private applyPanBoundaries(): void {
+    if (this.gridSize === 0) return;
+    
+    // Calculate the grid's actual size in screen coordinates
+    const totalGridWidth = this.gridSize * this.config.tileWidth * this.zoom;
+    const totalGridHeight = this.gridSize * this.config.tileHeight * this.zoom;
+    
+    // Define how much we can pan beyond the grid edges (in pixels)
+    const panBuffer = 200;
+    
+    // Calculate maximum pan offsets
+    const maxPanX = Math.max(0, (totalGridWidth - this.canvasWidth) / 2 + panBuffer);
+    const maxPanY = Math.max(0, (totalGridHeight - this.canvasHeight) / 2 + panBuffer);
+    
+    // Clamp camera offsets within boundaries
+    this.cameraOffsetX = Math.max(-maxPanX, Math.min(maxPanX, this.cameraOffsetX));
+    this.cameraOffsetY = Math.max(-maxPanY, Math.min(maxPanY, this.cameraOffsetY));
+  }
+
+  /**
+   * Get current camera offset
+   * @returns Object with camera X and Y offsets
+   */
+  getCameraOffset(): { x: number; y: number } {
+    return { x: this.cameraOffsetX, y: this.cameraOffsetY };
   }
 
   // Graphics Context Management
@@ -145,6 +214,11 @@ export class RenderingService {
    * @param gridSize - Size of the grid (number of tiles per side)
    */
   centerGrid(canvasWidth: number, canvasHeight: number, gridSize: number): void {
+    // Store canvas dimensions and grid size for pan boundary calculations
+    this.canvasWidth = canvasWidth;
+    this.canvasHeight = canvasHeight;
+    this.gridSize = gridSize;
+    
     // For isometric grid, calculate the actual rendered size
     const tileWidth = this.config.tileWidth;
     const tileHeight = this.config.tileHeight;
@@ -304,10 +378,10 @@ export class RenderingService {
    * @returns Object with screen coordinates {sx, sy}
    */
   gridToScreen(x: number, y: number): { sx: number; sy: number } {
-    // Simple isometric conversion with zoom applied
+    // Simple isometric conversion with zoom and camera offset applied
     const z = this.zoom;
-    const sx = this.config.mapOffsetX + (x - y) * (this.config.tileWidth / 2) * z;
-    const sy = this.config.mapOffsetY + (x + y) * (this.config.tileHeight / 2) * z;
+    const sx = this.config.mapOffsetX + (x - y) * (this.config.tileWidth / 2) * z + this.cameraOffsetX;
+    const sy = this.config.mapOffsetY + (x + y) * (this.config.tileHeight / 2) * z + this.cameraOffsetY;
     
     return { sx, sy };
   }
@@ -319,10 +393,10 @@ export class RenderingService {
    * @returns Object with grid coordinates {x, y}
    */
   screenToGrid(sx: number, sy: number): { x: number; y: number } {
-    // Simple reverse isometric conversion
+    // Simple reverse isometric conversion with camera offset
     const z = this.zoom;
-    const adjustedX = (sx - this.config.mapOffsetX) / z;
-    const adjustedY = (sy - this.config.mapOffsetY) / z;
+    const adjustedX = (sx - this.config.mapOffsetX - this.cameraOffsetX) / z;
+    const adjustedY = (sy - this.config.mapOffsetY - this.cameraOffsetY) / z;
     
     const x = Math.round((adjustedX / (this.config.tileWidth / 2) + adjustedY / (this.config.tileHeight / 2)) / 2);
     const y = Math.round((adjustedY / (this.config.tileHeight / 2) - adjustedX / (this.config.tileWidth / 2)) / 2);

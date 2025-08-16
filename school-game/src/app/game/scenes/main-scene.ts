@@ -26,6 +26,10 @@ export class MainSceneFactory {
         private selectedBoundary: string | null = null;
         private isPlacingSchool: boolean = false;
         
+        // Pan tracking
+        private pointerStartPos: { x: number; y: number } | null = null;
+        private hasPanned: boolean = false;
+        
         // Paint mode system
         private paintMode: 'municipality' | 'area' | 'unit' | 'school' | 'clear' | null = null;
         private currentMunicipalityId: string | null = null;
@@ -121,6 +125,10 @@ export class MainSceneFactory {
 
           // Set up input handling for click-and-drag selection
           (this as any)['input'].on('pointerdown', (pointer: any) => {
+            // Track pointer start position to detect pan vs click
+            this.pointerStartPos = { x: pointer.x, y: pointer.y };
+            this.hasPanned = false;
+            
             if (this.paintMode) {
               // Use new paint system
               this.isSelecting = true;
@@ -131,26 +139,43 @@ export class MainSceneFactory {
               this.isSelecting = true;
               this.assignBoundaryAt(pointer.x, pointer.y);
             } else {
-              // Custom: Notify Angular if a school is clicked
+              // Custom: Notify Angular if a school is clicked (but only if not panning)
               const { x, y } = this.renderingService.screenToGrid(pointer.x, pointer.y);
               const school = this.gameStateService["schoolService"].getSchoolAtPosition(x, y);
-              if (school && this.gameEventService) {
+              if (school && this.gameEventService && !this.hasPanned) {
                 this.gameEventService.schoolClicked$.next({ ...school, x, y });
               }
-              // DO NOT place schools when no boundary is selected - that was the bug!
-              // Schools should only be placed when in explicit school placement mode
             }
           });
+          
           (this as any)['input'].on('pointermove', (pointer: any) => {
-            if (this.isSelecting && this.paintMode) {
-              // Continue painting while dragging
+            // Check if this is a pan gesture
+            if (this.pointerStartPos) {
+              const deltaX = Math.abs(pointer.x - this.pointerStartPos.x);
+              const deltaY = Math.abs(pointer.y - this.pointerStartPos.y);
+              
+              // If moved more than 5 pixels, consider it a pan
+              if (deltaX > 5 || deltaY > 5) {
+                this.hasPanned = true;
+              }
+            }
+            
+            if (this.isSelecting && this.paintMode && !this.hasPanned) {
+              // Continue painting while dragging (but not while panning)
               this.paintAt(pointer.x, pointer.y);
-            } else if (this.isSelecting && this.selectedBoundary) {
+            } else if (this.isSelecting && this.selectedBoundary && !this.hasPanned) {
               this.assignBoundaryAt(pointer.x, pointer.y);
             }
           });
+          
           (this as any)['input'].on('pointerup', () => {
             this.isSelecting = false;
+            this.pointerStartPos = null;
+            
+            // Reset pan flag after a delay to prevent accidental clicks
+            setTimeout(() => {
+              this.hasPanned = false;
+            }, 100);
           });
         }
 
