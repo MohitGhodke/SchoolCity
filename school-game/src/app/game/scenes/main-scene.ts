@@ -7,16 +7,25 @@ export class MainSceneFactory {
   static createScene(gameStateService: GameStateService, renderingService: RenderingService, educationHierarchyService: EducationHierarchyService, gameEventService: GameEventService): any {
     // Return a function that will create the scene class when called
     return function(Phaser: any) {
-      // Ensure Phaser.Scene exists and is properly accessible
-      const Scene = Phaser.Scene || Phaser.default?.Scene;
+      // Handle different import formats for production builds
+      const PhaserModule = Phaser.default || Phaser;
+      const Scene = PhaserModule.Scene || Phaser.Scene;
+      
+      console.log('🔍 Phaser import check:', { 
+        hasDefault: !!Phaser.default, 
+        hasDirectScene: !!Phaser.Scene, 
+        hasModuleScene: !!(PhaserModule?.Scene),
+        SceneFound: !!Scene
+      });
+      
       if (!Scene) {
-        console.error('❌ Phaser.Scene not found!', Phaser);
-        throw new Error('Phaser.Scene not available');
+        console.error('❌ No Scene class found!', { Phaser, PhaserModule });
+        throw new Error('Phaser.Scene not available in any format');
       }
       
-      console.log('🏗️ Creating MainScene class extending Phaser.Scene');
+      console.log('✅ Using Scene class:', Scene);
       
-      class MainScene extends Scene {
+      return class extends Scene {
         private gameEventService: GameEventService;
         private graphics: any;
         private gameStateService: GameStateService;
@@ -34,7 +43,9 @@ export class MainSceneFactory {
         private currentUnitId: string | null = null;
 
         constructor() {
+          console.log('🏗️ MainScene constructor called');
           super({ key: 'MainScene' });
+          console.log('✅ Super constructor completed');
           this.gameStateService = gameStateService;
           this.renderingService = renderingService;
           this.educationHierarchyService = educationHierarchyService;
@@ -45,9 +56,11 @@ export class MainSceneFactory {
           if (!this.municipalityManager) {
             console.error('❌ MunicipalityManager not found in RenderingService!');
           }
+          console.log('✅ MainScene constructor completed');
         }
 
         preload(): void {
+          console.log('🏗️ MainScene preload called');
           // Load the school PNG image during preload phase
           (this as any)['load'].image('school', 'assets/images/school.png');
           
@@ -59,6 +72,7 @@ export class MainSceneFactory {
               this.createFallbackTexture();
             }
           });
+          console.log('✅ MainScene preload completed');
         }
 
         createFallbackTexture(): void {
@@ -83,15 +97,52 @@ export class MainSceneFactory {
         }
 
         create(): void {
-          this.graphics = (this as any)['add'].graphics();
-          this.renderingService.setGraphics(this.graphics);
-          this.renderingService.setScene(this); // Initialize sprite system
+          console.log('🏗️ MainScene create called');
+          
+          try {
+            console.log('🎨 Creating graphics...');
+            
+            // Try different ways to access graphics
+            const addObject = (this as any).add;
+            console.log('✅ Add object available:', !!addObject);
+            
+            if (addObject && typeof addObject.graphics === 'function') {
+              this.graphics = addObject.graphics();
+              console.log('✅ Graphics created successfully');
+              
+              // Draw a simple test rectangle to show the canvas is working
+              this.graphics.fillStyle(0x00ff00, 1);
+              this.graphics.fillRect(100, 100, 200, 100);
+              console.log('✅ Test rectangle drawn');
+              
+              this.renderingService.setGraphics(this.graphics);
+              console.log('✅ Graphics set in rendering service');
+              
+              this.renderingService.setScene(this); // Initialize sprite system
+              console.log('✅ Scene set in rendering service');
 
-          // Start the game
-          this.gameStateService.startGame();
+              // Start the game
+              console.log('🚀 Starting game...');
+              this.gameStateService.startGame();
+              console.log('✅ Game started');
 
-          // Initial render
-          this.gameStateService.renderGame();
+              // Initial render
+              console.log('🎨 Initial render...');
+              this.gameStateService.renderGame();
+              console.log('✅ Initial render completed');
+              
+              console.log('🎮 MainScene create completed successfully!');
+            } else {
+              console.error('❌ Graphics function not available');
+              console.log('Add object type:', typeof addObject);
+              console.log('Graphics function type:', typeof addObject?.graphics);
+            }
+          } catch (error) {
+            console.error('❌ Error in MainScene create:', error);
+            if (error instanceof Error) {
+              console.error('Error details:', error.stack);
+            }
+          }
 
           // Listen for boundary selection from Angular
           (window as any).setSelectedBoundary = (boundaryId: string) => {
@@ -484,10 +535,7 @@ export class MainSceneFactory {
             this.graphics.destroy();
           }
         }
-      }
-      
-      console.log('✅ MainScene class created successfully');
-      return MainScene;
+      };
     };
   }
 }
