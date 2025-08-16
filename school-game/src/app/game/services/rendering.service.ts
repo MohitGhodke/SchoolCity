@@ -145,19 +145,28 @@ export class RenderingService {
    * @param gridSize - Size of the grid (number of tiles per side)
    */
   centerGrid(canvasWidth: number, canvasHeight: number, gridSize: number): void {
-    // For isometric grid, we need to calculate the diamond shape bounds
+    console.log('🎯 Centering grid:', { canvasWidth, canvasHeight, gridSize });
+    
+    // For isometric grid, calculate the actual rendered size
     const tileWidth = this.config.tileWidth;
     const tileHeight = this.config.tileHeight;
     
-    // In isometric view, the grid forms a diamond shape
-    // The width is: gridSize * tileWidth (diagonal extent)
-    // The height is: gridSize * tileHeight (diagonal extent)
-    const totalGridWidth = gridSize * (tileWidth / 2) + gridSize * (tileWidth / 2); // Left diagonal + right diagonal
-    const totalGridHeight = gridSize * (tileHeight / 2) + gridSize * (tileHeight / 2); // Top diagonal + bottom diagonal
+    // The grid forms a diamond shape when viewed isometrically
+    // Total width: gridSize tiles across the diagonal = gridSize * tileWidth
+    // Total height: gridSize tiles down the diagonal = gridSize * tileHeight  
+    const totalGridWidth = gridSize * tileWidth;
+    const totalGridHeight = gridSize * tileHeight;
     
-    // Center the diamond in the canvas
-    this.config.mapOffsetX = canvasWidth / 2;
-    this.config.mapOffsetY = (canvasHeight - totalGridHeight) / 2 + (tileHeight / 2);
+    // Center the grid in the available space
+    this.config.mapOffsetX = (canvasWidth - totalGridWidth) / 2 + (totalGridWidth / 2);
+    this.config.mapOffsetY = (canvasHeight - totalGridHeight) / 2 + (totalGridHeight / 4);
+    
+    console.log('✅ Grid centered at:', { 
+      offsetX: this.config.mapOffsetX, 
+      offsetY: this.config.mapOffsetY,
+      totalGridWidth,
+      totalGridHeight
+    });
   }
 
   // Graphics Clearing
