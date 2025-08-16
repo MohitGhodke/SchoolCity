@@ -7,7 +7,16 @@ export class MainSceneFactory {
   static createScene(gameStateService: GameStateService, renderingService: RenderingService, educationHierarchyService: EducationHierarchyService, gameEventService: GameEventService): any {
     // Return a function that will create the scene class when called
     return function(Phaser: any) {
-      return class extends Phaser.Scene {
+      // Ensure Phaser.Scene exists and is properly accessible
+      const Scene = Phaser.Scene || Phaser.default?.Scene;
+      if (!Scene) {
+        console.error('❌ Phaser.Scene not found!', Phaser);
+        throw new Error('Phaser.Scene not available');
+      }
+      
+      console.log('🏗️ Creating MainScene class extending Phaser.Scene');
+      
+      class MainScene extends Scene {
         private gameEventService: GameEventService;
         private graphics: any;
         private gameStateService: GameStateService;
@@ -475,7 +484,10 @@ export class MainSceneFactory {
             this.graphics.destroy();
           }
         }
-      };
+      }
+      
+      console.log('✅ MainScene class created successfully');
+      return MainScene;
     };
   }
 }
