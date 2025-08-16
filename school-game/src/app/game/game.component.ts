@@ -1,18 +1,64 @@
 
-import { Component, ElementRef, OnInit, OnDestroy, ViewChild, Inject, PLATFORM_ID, NgZone, ChangeDetectorRef } from '@angular/core';
+/**
+ * @fileoverview Main game component for the SchoolCity simulation game.
+ * 
+ * This component manages the entire game interface including:
+ * - Phaser.js game engine integration
+ * - User interface controls (zoom, theme, save/load)
+ * - School management modal system
+ * - Touch and mouse input handling
+ * - Game state persistence
+ * 
+ * The component acts as the bridge between Angular's reactive UI system
+ * and the Phaser.js game engine, handling all user interactions and
+ * coordinating with various game services.
+ * 
+ * @author SchoolCity Development Team
+ * @version 1.0.0
+ */
+
+import { 
+  Component, 
+  ElementRef, 
+  OnInit, 
+  OnDestroy, 
+  ViewChild, 
+  Inject, 
+  PLATFORM_ID, 
+  NgZone, 
+  ChangeDetectorRef 
+} from '@angular/core';
 import { isPlatformBrowser, CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
+
+// Game UI Components
 import { BoundarySelectorComponent } from './ui/boundary-selector.component';
 import { ThemeToggleComponent } from './ui/theme-toggle.component';
+
+// Game Services
 import { GameEngineService, GameConfig } from './services/game-engine.service';
 import { GameStateService } from './services/game-state.service';
 import { RenderingService } from './services/rendering.service';
 import { ThemeService } from './services/theme.service';
 import { GameDataService } from './services/game-data.service';
-import { MainSceneFactory } from './scenes/main-scene';
 import { GameEventService } from './services/game-event.service';
 import { EducationHierarchyService } from './services/education-hierarchy.service';
+
+// Game Scene and Constants
+import { MainSceneFactory } from './scenes/main-scene';
 import { GAME_CONSTANTS } from './constants/game-constants';
+
+/**
+ * Main game component that manages the entire SchoolCity game interface.
+ * 
+ * This component handles:
+ * - Game initialization and cleanup
+ * - User input (mouse, touch, keyboard)
+ * - UI state management
+ * - School selection and management
+ * - Game persistence (save/load)
+ * - Theme and zoom controls
+ */
 
 @Component({
   selector: 'app-game',
@@ -42,10 +88,10 @@ import { GAME_CONSTANTS } from './constants/game-constants';
       <app-theme-toggle></app-theme-toggle>
     </div>
 
-    <!-- Separate paint toolbar -->
+    <!-- Boundary paint toolbar -->
     <app-boundary-selector (boundarySelected)="onBoundarySelected($event)"></app-boundary-selector>
 
-    <!-- School Info Modal -->
+    <!-- School information modal -->
     <div class="school-info-modal" [class.modal-hidden]="!selectedSchool">
       <div class="modal-content">
         <h3>{{ selectedSchool?.name || 'No School' }}</h3>
@@ -59,75 +105,43 @@ import { GAME_CONSTANTS } from './constants/game-constants';
       </div>
     </div>
 
+    <!-- Phaser.js game container -->
     <div id="gameContainer" #gameContainer></div>
   `,
   styleUrls: ['./game.component.css']
 })
 export class GameComponent implements OnInit, OnDestroy {
+  // Component Properties
+  /** Currently selected school data for the modal */
   selectedSchool: any = null;
+  
+  /** Grid position of the currently selected school */
   selectedSchoolPos: { x: number, y: number } | null = null;
+  
+  /** Whether there is saved game data available to load */
   hasSavedData: boolean = false;
-  private schoolClickedSubscription?: Subscription;
-  private themeSubscription?: Subscription;
-  // Handle click on the game grid to select a school
-  onGameContainerClick(event: MouseEvent) {
-    // Get click position relative to the canvas
-    const rect = this.gameContainer.nativeElement.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    // Convert to grid position
-    const gridPos = this.renderingService.screenToGrid(x, y);
-    // Check if a school exists at this position
-    if (this.gameStateService && this.gameStateService.isGameActive()) {
-      const school = this.gameStateService["schoolService"].getSchoolAtPosition(gridPos.x, gridPos.y);
-      if (school) {
-        this.selectedSchool = { ...school };
-        this.selectedSchoolPos = { x: gridPos.x, y: gridPos.y };
-      } else {
-        this.selectedSchool = null;
-        this.selectedSchoolPos = null;
-      }
-    }
-  }
-
-  addStudent() {
-    if (this.selectedSchool) {
-      const ok = this.gameStateService["schoolService"].addStudents(this.selectedSchool.id, 1);
-      if (ok) {
-        this.selectedSchool.currentStudents++;
-        this.gameStateService.renderGame();
-      }
-    }
-  }
-
-  removeStudent() {
-    if (this.selectedSchool && this.selectedSchool.currentStudents > 0) {
-      const ok = this.gameStateService["schoolService"].removeStudents(this.selectedSchool.id, 1);
-      if (ok) {
-        this.selectedSchool.currentStudents--;
-        this.gameStateService.renderGame();
-      }
-    }
-  }
-
-  removeSchool() {
-    if (this.selectedSchoolPos) {
-      this.gameStateService["schoolService"].removeSchool(this.selectedSchoolPos.x, this.selectedSchoolPos.y);
-      this.selectedSchool = null;
-      this.selectedSchoolPos = null;
-      this.gameStateService.renderGame();
-    }
-  }
-
-  closeSchoolInfo() {
-    this.selectedSchool = null;
-    this.selectedSchoolPos = null;
-    this.cdRef.detectChanges();
-  }
-  private lastTouchDist: number | null = null;
+  
+  /** Currently selected boundary type for painting */
   selectedBoundary: string | null = null;
+
+  // Touch Input Properties  
+  /** Last recorded distance between two touch points for pinch-to-zoom */
+  private lastTouchDist: number | null = null;
+
+  // Subscriptions for cleanup
+  /** Subscription to school click events from Phaser */
+  private schoolClickedSubscription?: Subscription;
+  
+  /** Subscription to theme change events */
+  private themeSubscription?: Subscription;
+
+  // View References
+  /** Reference to the DOM container where Phaser renders the game */
   @ViewChild('gameContainer', { static: true }) gameContainer!: ElementRef;
 
+  /**
+   * Constructor - inject all required services
+   */
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
     private gameEngineService: GameEngineService,
@@ -141,8 +155,64 @@ export class GameComponent implements OnInit, OnDestroy {
     private cdRef: ChangeDetectorRef
   ) {}
 
-  // Mouse wheel zoom handler
-  onWheel(e: WheelEvent) {
+  // School Management Methods
+
+  /**
+   * Add a student to the currently selected school
+   */
+  addStudent(): void {
+    if (this.selectedSchool) {
+      const ok = this.gameStateService["schoolService"].addStudents(this.selectedSchool.id, 1);
+      if (ok) {
+        this.selectedSchool.currentStudents++;
+        this.gameStateService.renderGame();
+      }
+    }
+  }
+
+  /**
+   * Remove a student from the currently selected school
+   */
+  removeStudent(): void {
+    if (this.selectedSchool && this.selectedSchool.currentStudents > 0) {
+      const ok = this.gameStateService["schoolService"].removeStudents(this.selectedSchool.id, 1);
+      if (ok) {
+        this.selectedSchool.currentStudents--;
+        this.gameStateService.renderGame();
+      }
+    }
+  }
+
+  /**
+   * Remove the currently selected school from the grid
+   */
+  removeSchool(): void {
+    if (this.selectedSchoolPos) {
+      this.gameStateService["schoolService"].removeSchool(this.selectedSchoolPos.x, this.selectedSchoolPos.y);
+      this.selectedSchool = null;
+      this.selectedSchoolPos = null;
+      this.gameStateService.renderGame();
+    }
+  }
+
+  /**
+   * Close the school information modal
+   */
+  closeSchoolInfo(): void {
+    this.selectedSchool = null;
+    this.selectedSchoolPos = null;
+    this.cdRef.detectChanges();
+  }
+
+  // Input Handling Methods
+
+  /**
+   * Handle mouse wheel zoom events
+   */
+  /**
+   * Handle mouse wheel zoom events
+   */
+  onWheel(e: WheelEvent): void {
     e.preventDefault();
     const zoomChange = e.deltaY > 0 ? -0.05 : 0.05;
     const newZoom = this.renderingService!.getZoom() + zoomChange;
@@ -150,52 +220,75 @@ export class GameComponent implements OnInit, OnDestroy {
     this.gameStateService!.renderGame();
   }
 
-    zoomIn() {
-      const newZoom = this.renderingService.getZoom() + 0.1;
-      this.renderingService.setZoom(newZoom);
-      this.gameStateService.renderGame();
+  /**
+   * Increase zoom level
+   */
+  zoomIn(): void {
+    const newZoom = this.renderingService.getZoom() + 0.1;
+    this.renderingService.setZoom(newZoom);
+    this.gameStateService.renderGame();
+  }
+
+  /**
+   * Decrease zoom level  
+   */
+  zoomOut(): void {
+    const newZoom = this.renderingService.getZoom() - 0.1;
+    this.renderingService.setZoom(newZoom);
+    this.gameStateService.renderGame();
+  }
+
+  /**
+   * Handle touch start events for pinch-to-zoom
+   */
+  onTouchStart = (e: TouchEvent): void => {
+    if (e.touches.length === 2) {
+      this.lastTouchDist = this.getTouchDist(e);
     }
+  };
 
-    zoomOut() {
-      const newZoom = this.renderingService.getZoom() - 0.1;
-      this.renderingService.setZoom(newZoom);
-      this.gameStateService.renderGame();
+  /**
+   * Handle touch move events for pinch-to-zoom
+   */
+  onTouchMove = (e: TouchEvent): void => {
+    if (e.touches.length === 2 && this.lastTouchDist !== null) {
+      e.preventDefault();
+      const newDist = this.getTouchDist(e);
+      const delta = newDist - this.lastTouchDist;
+      if (Math.abs(delta) > 5) {
+        const zoomChange = delta > 0 ? 0.05 : -0.05;
+        const newZoom = this.renderingService.getZoom() + zoomChange;
+        this.renderingService.setZoom(newZoom);
+        this.gameStateService.renderGame();
+        this.lastTouchDist = newDist;
+      }
     }
+  };
 
-    // Touch pinch-to-zoom handlers
-    onTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 2) {
-        this.lastTouchDist = this.getTouchDist(e);
-      }
-    };
-
-    onTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 2 && this.lastTouchDist !== null) {
-        e.preventDefault();
-        const newDist = this.getTouchDist(e);
-        const delta = newDist - this.lastTouchDist;
-        if (Math.abs(delta) > 5) {
-          const zoomChange = delta > 0 ? 0.05 : -0.05;
-          const newZoom = this.renderingService.getZoom() + zoomChange;
-          this.renderingService.setZoom(newZoom);
-          this.gameStateService.renderGame();
-          this.lastTouchDist = newDist;
-        }
-      }
-    };
-
-    onTouchEnd = (e: TouchEvent) => {
-      if (e.touches.length < 2) {
-        this.lastTouchDist = null;
-      }
-    };
-
-    getTouchDist(e: TouchEvent): number {
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      return Math.sqrt(dx * dx + dy * dy);
+  /**
+   * Handle touch end events for pinch-to-zoom
+   */
+  onTouchEnd = (e: TouchEvent): void => {
+    if (e.touches.length < 2) {
+      this.lastTouchDist = null;
     }
-  async ngOnInit() {
+  };
+
+  /**
+   * Calculate distance between two touch points
+   */
+  getTouchDist(e: TouchEvent): number {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  // Lifecycle Methods
+
+  /**
+   * Component initialization - set up the game engine and all event handlers
+   */
+  async ngOnInit(): Promise<void> {
     if (isPlatformBrowser(this.platformId)) {
       // Check if there's saved game data
       this.hasSavedData = this.gameDataService.hasSavedData();
@@ -309,10 +402,11 @@ export class GameComponent implements OnInit, OnDestroy {
     }
   }
 
-
-
-  ngOnDestroy() {
-    // Unsubscribe from school click events to prevent memory leaks and duplicate subscriptions
+  /**
+   * Component cleanup - destroy game and unsubscribe from events
+   */
+  ngOnDestroy(): void {
+    // Unsubscribe from school click events to prevent memory leaks
     if (this.schoolClickedSubscription) {
       this.schoolClickedSubscription.unsubscribe();
     }
@@ -322,10 +416,16 @@ export class GameComponent implements OnInit, OnDestroy {
       this.themeSubscription.unsubscribe();
     }
     
+    // Destroy the Phaser game instance
     this.gameEngineService.destroyGame();
   }
 
-  onBoundarySelected(boundaryId: string) {
+  // Game Action Methods
+
+  /**
+   * Handle boundary selection from the UI
+   */
+  onBoundarySelected(boundaryId: string): void {
     this.selectedBoundary = boundaryId;
     // Sync with Phaser scene
     if (typeof window !== 'undefined' && (window as any).setSelectedBoundary) {
@@ -333,7 +433,10 @@ export class GameComponent implements OnInit, OnDestroy {
     }
   }
 
-  onCleanSlate() {
+  /**
+   * Reset the game to a clean state
+   */
+  onCleanSlate(): void {
     this.gameStateService.cleanSlate();
     // Also clear the municipality manager data
     const municipalityManager = (this.renderingService as any).municipalityManager;
@@ -344,26 +447,32 @@ export class GameComponent implements OnInit, OnDestroy {
     this.saveGame();
   }
 
-  saveGame() {
+  /**
+   * Save the current game state to localStorage
+   */
+  saveGame(): void {
     const success = this.gameDataService.saveGameData();
     if (success) {
       this.hasSavedData = true;
-      // You could show a toast notification here
+      // TODO: Show success toast notification
     } else {
       console.error('❌ Failed to save game');
-      // You could show an error message here
+      // TODO: Show error message to user
     }
   }
 
-  loadGame() {
+  /**
+   * Load game state from localStorage
+   */
+  loadGame(): void {
     const success = this.gameDataService.loadGameData();
     if (success) {
       // Re-render the game after loading
       this.gameStateService.renderGame();
-      // You could show a toast notification here
+      // TODO: Show success toast notification
     } else {
       console.error('❌ Failed to load game');
-      // You could show an error message here
+      // TODO: Show error message to user
     }
   }
 }

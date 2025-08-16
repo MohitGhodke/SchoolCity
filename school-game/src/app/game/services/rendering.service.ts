@@ -1,37 +1,79 @@
+/**
+ * @fileoverview Core rendering service for the SchoolCity isometric game engine.
+ * 
+ * This service handles all visual rendering operations for the game, including:
+ * - Isometric grid tile rendering
+ * - Coordinate system transformations (grid ↔ screen)
+ * - School sprite positioning and scaling
+ * - Municipality/boundary visualization
+ * - Zoom and camera controls
+ * - Integration with Phaser.js graphics engine
+ * 
+ * The service acts as a bridge between the game's logical coordinate system
+ * (grid-based) and the visual coordinate system (screen pixels), handling
+ * all the mathematical transformations required for isometric projection.
+ * 
+ * @author SchoolCity Development Team
+ * @version 1.0.0
+ */
+
 import { Injectable } from '@angular/core';
 import { GAME_CONSTANTS } from '../constants/game-constants';
 import { MunicipalityManagerService } from './municipality-manager.service';
 import { ThemeService } from './theme.service';
 import { Tile } from './grid.service';
 
+/**
+ * Configuration interface for rendering parameters
+ */
 export interface RenderConfig {
+  /** Width of isometric tiles in pixels */
   tileWidth: number;
+  /** Height of isometric tiles in pixels */
   tileHeight: number;
+  /** Horizontal offset for positioning the grid */
   mapOffsetX: number;
+  /** Vertical offset for positioning the grid */
   mapOffsetY: number;
 }
+
+/**
+ * Main rendering service that handles all visual aspects of the game.
+ * 
+ * This service is responsible for:
+ * - Converting between grid coordinates and screen pixels
+ * - Drawing isometric tiles with proper perspective
+ * - Rendering school buildings and components
+ * - Managing zoom levels and camera positioning
+ * - Coordinating with Phaser.js for sprite management
+ */
 
 @Injectable({
   providedIn: 'root'
 })
 export class RenderingService {
+  // Core Graphics Objects
+  /** Phaser.js graphics object for drawing tiles and shapes */
   private graphics: any = null;
-  private scene: any = null; // Phaser scene for loading PNG image
+  
+  /** Phaser.js scene reference for sprite management */
+  private scene: any = null;
+  
+  // Rendering Configuration
+  /** Current rendering configuration (tile sizes, offsets) */
   private config: RenderConfig;
+  
+  /** Current zoom level (0.5x to 2x) */
   private zoom: number = 1;
 
-  setZoom(zoom: number) {
-    this.zoom = Math.max(0.5, Math.min(zoom, 2)); // Clamp between 0.5x and 2x
-  }
-
-  getZoom(): number {
-    return this.zoom;
-  }
-
+  /**
+   * Constructor - inject required services and initialize configuration
+   */
   constructor(
     private municipalityManager: MunicipalityManagerService,
     private themeService: ThemeService
   ) {
+    // Initialize rendering configuration from game constants
     this.config = {
       tileWidth: GAME_CONSTANTS.GRID.TILE_WIDTH,
       tileHeight: GAME_CONSTANTS.GRID.TILE_HEIGHT,
@@ -40,22 +82,68 @@ export class RenderingService {
     };
   }
 
+  // Zoom Management Methods
+
+  /**
+   * Set the current zoom level with bounds checking
+   * @param zoom - Desired zoom level (clamped between 0.5 and 2.0)
+   */
+  setZoom(zoom: number): void {
+    this.zoom = Math.max(0.5, Math.min(zoom, 2)); // Clamp between 0.5x and 2x
+  }
+
+  /**
+   * Get the current zoom level
+   * @returns Current zoom multiplier
+   */
+  getZoom(): number {
+    return this.zoom;
+  }
+
+  // Graphics Context Management
+
+  /**
+   * Set the Phaser graphics object for drawing operations
+   * @param graphics - Phaser.js graphics context
+   */
   setGraphics(graphics: any): void {
     this.graphics = graphics;
   }
 
+  /**
+   * Set the Phaser scene for sprite management
+   * @param scene - Phaser.js scene instance
+   */
   setScene(scene: any): void {
     this.scene = scene;
   }
 
+  // Configuration Management
+
+  /**
+   * Update rendering configuration
+   * @param config - Partial configuration object to merge with current config
+   */
   setConfig(config: Partial<RenderConfig>): void {
     this.config = { ...this.config, ...config };
   }
 
+  /**
+   * Get a copy of the current rendering configuration
+   * @returns Current rendering configuration
+   */
   getConfig(): RenderConfig {
     return { ...this.config };
   }
 
+  // Grid Positioning
+
+  /**
+   * Center the isometric grid within the given canvas dimensions
+   * @param canvasWidth - Width of the canvas in pixels
+   * @param canvasHeight - Height of the canvas in pixels  
+   * @param gridSize - Size of the grid (number of tiles per side)
+   */
   centerGrid(canvasWidth: number, canvasHeight: number, gridSize: number): void {
     // For isometric grid, we need to calculate the diamond shape bounds
     const tileWidth = this.config.tileWidth;
@@ -72,6 +160,11 @@ export class RenderingService {
     this.config.mapOffsetY = (canvasHeight - totalGridHeight) / 2 + (tileHeight / 2);
   }
 
+  // Graphics Clearing
+
+  /**
+   * Clear all graphics and sprites to prepare for re-rendering
+   */
   clearGraphics(): void {
     // Clear the graphics canvas for tiles (they get redrawn each frame)
     if (this.graphics) {
@@ -87,6 +180,16 @@ export class RenderingService {
     }
   }
 
+  // Tile Rendering
+
+  /**
+   * Draw a single isometric tile with the specified colors
+   * @param x - Grid X coordinate
+   * @param y - Grid Y coordinate  
+   * @param color - Fill color for the tile
+   * @param borderColor - Border color for the tile
+   * @param tile - Optional tile data for boundary coloring
+   */
   drawTile(x: number, y: number, color: number, borderColor: number, tile?: Tile): void {
     if (!this.graphics) return;
 
@@ -111,6 +214,14 @@ export class RenderingService {
     this.graphics.strokePath();
   }
 
+  // Municipality/Boundary Rendering
+
+  /**
+   * Draw a municipality boundary visualization
+   * @param x - Grid X coordinate
+   * @param y - Grid Y coordinate
+   * @param municipality - Municipality data with color and properties
+   */
   drawMunicipality(x: number, y: number, municipality: any): void {
     if (!this.graphics) return;
 
@@ -133,13 +244,19 @@ export class RenderingService {
     this.graphics.lineStyle(2, 0x000000, 1);
     this.graphics.strokePath();
 
-    // Draw municipality center
+    // Draw municipality center marker
     this.graphics.fillStyle(0xffffff, 1);
     this.graphics.fillCircle(sx, sy + halfTileH, 4 * z);
     this.graphics.lineStyle(1, 0x000000, 1);
     this.graphics.strokeCircle(sx, sy + halfTileH, 4 * z);
   }
 
+  // School Component Rendering
+
+  /**
+   * Draw a school component (building, playground, etc.)
+   * @param component - Component data with position and type information
+   */
   drawSchoolComponent(component: any): void {
     if (!this.graphics) return;
 
@@ -153,12 +270,16 @@ export class RenderingService {
   }
 
   /**
-   * Draw your PNG image at the specified screen coordinates
+   * Draw a school sprite at the specified screen coordinates
+   * @param screenX - Screen X coordinate in pixels
+   * @param screenY - Screen Y coordinate in pixels
+   * @param componentType - Type of school component for visual variation
+   * @returns The created Phaser sprite object
    */
-  private drawComponentSprite(screenX: number, screenY: number, componentType: string): void {
+  private drawComponentSprite(screenX: number, screenY: number, componentType: string): any {
     if (!this.scene) return;
 
-    // Simply place your beautiful school PNG image on the grid
+    // Create sprite using the school texture
     const sprite = this.scene.add.image(screenX, screenY, 'school');
     
     // Scale to fit exactly within 4 diamond tiles (2x2 area)
@@ -168,14 +289,22 @@ export class RenderingService {
     // (0.5, 0.5) centers the sprite perfectly on the grid coordinate
     sprite.setOrigin(0.5, 0.5);
     
-    // Add depth for proper layering
-    sprite.setDepth(screenY + 1000); // Higher depth to ensure schools render above tiles
+    // Add depth for proper layering (schools render above tiles)
+    sprite.setDepth(screenY + 1000);
     
     return sprite;
   }
 
+  // Coordinate System Transformations
+
+  /**
+   * Convert grid coordinates to screen pixel coordinates
+   * @param x - Grid X coordinate
+   * @param y - Grid Y coordinate
+   * @returns Object with screen coordinates {sx, sy}
+   */
   gridToScreen(x: number, y: number): { sx: number; sy: number } {
-    // Simple isometric conversion without complex zoom scaling
+    // Simple isometric conversion with zoom applied
     const z = this.zoom;
     const sx = this.config.mapOffsetX + (x - y) * (this.config.tileWidth / 2) * z;
     const sy = this.config.mapOffsetY + (x + y) * (this.config.tileHeight / 2) * z;
@@ -183,6 +312,12 @@ export class RenderingService {
     return { sx, sy };
   }
 
+  /**
+   * Convert screen pixel coordinates to grid coordinates
+   * @param sx - Screen X coordinate in pixels
+   * @param sy - Screen Y coordinate in pixels
+   * @returns Object with grid coordinates {x, y}
+   */
   screenToGrid(sx: number, sy: number): { x: number; y: number } {
     // Simple reverse isometric conversion
     const z = this.zoom;

@@ -1,3 +1,25 @@
+/**
+ * @fileoverview Central game state management service for SchoolCity.
+ * 
+ * This service coordinates all game systems and manages the overall game state.
+ * It acts as the central orchestrator that ties together all the various
+ * game services and ensures they work together cohesively.
+ * 
+ * Key responsibilities:
+ * - Game lifecycle management (start, pause, stop)
+ * - Coordination between different game systems
+ * - Game statistics calculation and tracking
+ * - Clean slate functionality for resetting the game
+ * - Rendering coordination and frame management
+ * - Educational hierarchy initialization
+ * 
+ * The service follows a facade pattern, providing a unified interface
+ * for game operations while delegating specific tasks to specialized services.
+ * 
+ * @author SchoolCity Development Team
+ * @version 1.0.0
+ */
+
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { GridService } from './grid.service';
@@ -11,22 +33,49 @@ import { GAME_CONSTANTS } from '../constants/game-constants';
 import { EducationHierarchyService } from './education-hierarchy.service';
 import { School, Municipality, Area, Unit } from '../models/education-hierarchy.models';
 
+/**
+ * Interface for game statistics and metrics
+ */
 export interface GameStats {
+  /** Total number of schools on the grid */
   totalSchools: number;
+  /** Total number of students across all schools */
   totalStudents: number;
+  /** Total capacity of all schools combined */
   totalCapacity: number;
+  /** Average utilization percentage across all schools */
   averageUtilization: number;
 }
 
+/**
+ * Central game state management service.
+ * 
+ * This service coordinates all game systems and provides a unified
+ * interface for managing the overall game state. It ensures that
+ * all subsystems work together harmoniously and maintains the
+ * game's core state and lifecycle.
+ */
 @Injectable({
   providedIn: 'root'
 })
 export class GameStateService {
+  // Game Lifecycle State
+  /** Whether the game is currently running */
   private isGameRunning: boolean = false;
+  
+  /** Timestamp when the current game session started */
   private gameStartTime: Date | null = null;
 
+  // Initialization Flags
+  /** Whether the education hierarchy has been initialized */
   private hierarchyInitialized = false;
 
+  /**
+   * Reset the game to a completely clean state
+   * 
+   * This method clears all game data, including saved data in localStorage,
+   * and reinitializes the game with a fresh educational hierarchy.
+   */
   public cleanSlate(): void {
     // Clear all game data
     this.gridService.cleanSlate();
@@ -48,6 +97,9 @@ export class GameStateService {
     this.renderGame();
   }
 
+  /**
+   * Constructor - inject all required game services
+   */
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
     private gridService: GridService,
