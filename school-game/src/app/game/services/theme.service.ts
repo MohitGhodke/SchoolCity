@@ -150,8 +150,9 @@ export class ThemeService {
       if (savedTheme === 'dark') {
         this.isDarkMode = true;
         this.darkModeSubject.next(true);
-        this.applyTheme();
       }
+      // Always apply theme on initialization
+      this.applyTheme();
     }
   }
 
@@ -184,6 +185,9 @@ export class ThemeService {
     const theme = this.getCurrentTheme();
     const root = document.documentElement;
     
+    // Set data-theme attribute for CSS selectors
+    root.setAttribute('data-theme', this.isDarkMode ? 'dark' : 'light');
+    
     // Apply CSS custom properties
     root.style.setProperty('--bg-primary', theme.background);
     root.style.setProperty('--bg-surface', theme.surface);
@@ -196,6 +200,21 @@ export class ThemeService {
     root.style.setProperty('--button-hover', theme.buttonHover);
     root.style.setProperty('--button-active', theme.buttonActive);
     root.style.setProperty('--button-disabled', theme.buttonDisabled);
+    
+    // Apply translucent variants for overlays
+    if (this.isDarkMode) {
+      root.style.setProperty('--bg-surface-translucent', 'rgba(45, 45, 45, 0.85)');
+      root.style.setProperty('--button-bg-translucent', 'rgba(45, 45, 45, 0.9)');
+      root.style.setProperty('--button-hover-translucent', 'rgba(55, 55, 55, 0.95)');
+      root.style.setProperty('--button-active-translucent', 'rgba(35, 35, 35, 0.8)');
+      root.style.setProperty('--modal-bg-translucent', 'rgba(45, 45, 45, 0.95)');
+    } else {
+      root.style.setProperty('--bg-surface-translucent', 'rgba(255, 255, 255, 0.85)');
+      root.style.setProperty('--button-bg-translucent', 'rgba(255, 255, 255, 0.9)');
+      root.style.setProperty('--button-hover-translucent', 'rgba(255, 255, 255, 0.95)');
+      root.style.setProperty('--button-active-translucent', 'rgba(255, 255, 255, 0.8)');
+      root.style.setProperty('--modal-bg-translucent', 'rgba(255, 255, 255, 0.95)');
+    }
     
     // Apply theme to Phaser canvas if it exists
     const canvas = document.querySelector('canvas');

@@ -2,6 +2,11 @@
 :root {
   --bg-primary: #f8fafb;
   --bg-surface: #ffffff;
+  --bg-surface-translucent: rgba(255, 255, 255, 0.85);
+  --button-bg-translucent: rgba(255, 255, 255, 0.9);
+  --button-hover-translucent: rgba(255, 255, 255, 0.95);
+  --button-active-translucent: rgba(255, 255, 255, 0.8);
+  --modal-bg-translucent: rgba(255, 255, 255, 0.95);
   --text-primary: #1f2937;
   --text-secondary: #6b7280;
   --color-primary: #4a90e2;
@@ -11,6 +16,26 @@
   --button-hover: #f3f4f6;
   --button-active: #e5e7eb;
   --button-disabled: #f9fafb;
+}
+
+/* Dark theme overrides */
+:root[data-theme="dark"] {
+  --bg-primary: #1a1a1a;
+  --bg-surface: #2d2d2d;
+  --bg-surface-translucent: rgba(45, 45, 45, 0.85);
+  --button-bg-translucent: rgba(45, 45, 45, 0.9);
+  --button-hover-translucent: rgba(55, 55, 55, 0.95);
+  --button-active-translucent: rgba(35, 35, 35, 0.8);
+  --modal-bg-translucent: rgba(45, 45, 45, 0.95);
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
+  --color-primary: #5aa3f0;
+  --color-secondary: #7dd3fc;
+  --color-accent: #10b981;
+  --button-bg: #3d3d3d;
+  --button-hover: #4d4d4d;
+  --button-active: #2d2d2d;
+  --button-disabled: #2a2a2a;
 }
 
 /* Game component styles */
@@ -39,7 +64,7 @@
   align-items: center;
   gap: 12px;
   z-index: 100;
-  background: var(--bg-surface);
+  background: var(--bg-surface-translucent);
   border-radius: 16px;
   padding: 12px 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
@@ -101,7 +126,7 @@
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
-  background: var(--button-bg);
+  background: var(--button-bg-translucent);
   color: var(--text-primary);
   text-align: center;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -119,13 +144,13 @@
 }
 
 .main-btn:hover {
-  background: var(--button-hover);
+  background: var(--button-hover-translucent);
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 .main-btn:active {
-  background: var(--button-active);
+  background: var(--button-active-translucent);
   transform: translateY(0);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
@@ -180,7 +205,7 @@
   top: 50% !important;
   left: 50% !important;
   transform: translate(-50%, -50%) !important;
-  background: var(--bg-surface) !important;
+  background: var(--modal-bg-translucent) !important;
   border-radius: 24px !important;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15) !important;
   padding: 0 !important;

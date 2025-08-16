@@ -145,16 +145,23 @@ export class RenderingService {
   private applyPanBoundaries(): void {
     if (this.gridSize === 0) return;
     
-    // Calculate the grid's actual size in screen coordinates
-    const totalGridWidth = this.gridSize * this.config.tileWidth * this.zoom;
-    const totalGridHeight = this.gridSize * this.config.tileHeight * this.zoom;
+    // For isometric grids, calculate the diamond-shaped bounds more accurately
+    // The grid forms a diamond, so we need to account for the actual rendered size
+    const tileWidth = this.config.tileWidth * this.zoom;
+    const tileHeight = this.config.tileHeight * this.zoom;
+    
+    // Calculate the actual diamond size
+    // In isometric view, the total width and height are determined by the diamond shape
+    const totalGridWidth = this.gridSize * tileWidth;  // Diamond width (left to right)
+    const totalGridHeight = this.gridSize * tileHeight; // Diamond height (top to bottom)
     
     // Define how much we can pan beyond the grid edges (in pixels)
-    const panBuffer = 200;
+    const panBuffer = 300; // Increased buffer for better mobile experience
     
     // Calculate maximum pan offsets
-    const maxPanX = Math.max(0, (totalGridWidth - this.canvasWidth) / 2 + panBuffer);
-    const maxPanY = Math.max(0, (totalGridHeight - this.canvasHeight) / 2 + panBuffer);
+    // For isometric grids, we need more generous boundaries especially for height
+    const maxPanX = Math.max(panBuffer, (totalGridWidth - this.canvasWidth) / 2 + panBuffer);
+    const maxPanY = Math.max(panBuffer, (totalGridHeight - this.canvasHeight) / 2 + panBuffer);
     
     // Clamp camera offsets within boundaries
     this.cameraOffsetX = Math.max(-maxPanX, Math.min(maxPanX, this.cameraOffsetX));

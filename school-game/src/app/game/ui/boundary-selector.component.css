@@ -4,7 +4,7 @@
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--bg-surface);
+  background: var(--bg-surface-translucent);
   backdrop-filter: blur(20px);
   border-radius: 20px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
@@ -32,7 +32,7 @@
   padding: 16px 18px;
   border: 2px solid transparent;
   border-radius: 14px;
-  background: var(--button-bg);
+  background: var(--button-bg-translucent);
   color: var(--text-primary);
   font-size: 13px;
   font-weight: 600;
@@ -79,7 +79,7 @@
 .paint-tool:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  background: var(--button-hover);
+  background: var(--button-hover-translucent);
 }
 
 .paint-tool:hover:not(:disabled)::before {
