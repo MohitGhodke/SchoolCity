@@ -71,14 +71,18 @@ export class MunicipalityManagerService {
     if (!municipality) return null;
 
     const areaIndex = municipality.areas.length + 1;
-    const areaColors = this.themeService.getAreaColors();
-    const areaColor = areaColors[(municipality.areas.length) % areaColors.length];
+    
+    // Generate area color as a shade of the municipality's base color
+    // Use different lightness factors for different areas within the same municipality
+    const shadeFactor = 1.2 + (municipality.areas.length * 0.15); // Makes areas progressively lighter
+    const areaColorData = this.generateShadeFromNumber(municipality.baseColor, shadeFactor);
+    
     const area: AreaDefinition = {
       id: `${municipalityId}-area-${areaIndex}`,
       name: `Area ${areaIndex}`,
       municipalityId: municipalityId,
-      color: areaColor,
-      colorString: this.hexNumberToString(areaColor),
+      color: areaColorData.color,
+      colorString: areaColorData.colorString,
       units: []
     };
 
@@ -92,15 +96,19 @@ export class MunicipalityManagerService {
     if (!municipality || !area) return null;
 
     const unitIndex = area.units.length + 1;
-    const unitColors = this.themeService.getUnitColors();
-    const unitColor = unitColors[(area.units.length) % unitColors.length];
+    
+    // Generate unit color as a different shade of the municipality's base color
+    // Use a different shading approach for units - make them darker than the municipality
+    const shadeFactor = 0.8 - (area.units.length * 0.1); // Makes units progressively darker
+    const unitColorData = this.generateShadeFromNumber(municipality.baseColor, shadeFactor);
+    
     const unit: UnitDefinition = {
       id: `${areaId}-unit-${unitIndex}`,
       name: `Unit ${unitIndex}`,
       areaId: areaId,
       municipalityId: municipalityId,
-      color: unitColor,
-      colorString: this.hexNumberToString(unitColor)
+      color: unitColorData.color,
+      colorString: unitColorData.colorString
     };
 
     area.units.push(unit);
@@ -123,10 +131,25 @@ export class MunicipalityManagerService {
     const g = (colorNumber >> 8) & 255;
     const b = colorNumber & 255;
 
-    // Apply factor (>1 for lighter, <1 for darker)
-    const newR = Math.round(Math.min(255, r + (255 - r) * (factor - 1)));
-    const newG = Math.round(Math.min(255, g + (255 - g) * (factor - 1)));
-    const newB = Math.round(Math.min(255, b + (255 - b) * (factor - 1)));
+    let newR, newG, newB;
+
+    if (factor > 1) {
+      // Lighter shade: blend with white
+      const lightenFactor = (factor - 1);
+      newR = Math.round(r + (255 - r) * lightenFactor);
+      newG = Math.round(g + (255 - g) * lightenFactor);
+      newB = Math.round(b + (255 - b) * lightenFactor);
+    } else {
+      // Darker shade: multiply by factor
+      newR = Math.round(r * factor);
+      newG = Math.round(g * factor);
+      newB = Math.round(b * factor);
+    }
+
+    // Ensure values are within valid range
+    newR = Math.max(0, Math.min(255, newR));
+    newG = Math.max(0, Math.min(255, newG));
+    newB = Math.max(0, Math.min(255, newB));
 
     // Convert back to hex number and string
     const newColorNumber = (newR << 16) | (newG << 8) | newB;
