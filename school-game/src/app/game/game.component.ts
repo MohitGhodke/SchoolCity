@@ -312,8 +312,6 @@ export class GameComponent implements OnInit, OnDestroy {
           return;
         }
         
-        console.log('🎯 Container ready:', container);
-        console.log('🎯 Container size:', container.clientWidth, 'x', container.clientHeight);
         // Use full window size in browser
         const width = window.innerWidth;
         const height = window.innerHeight;

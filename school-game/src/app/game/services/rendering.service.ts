@@ -145,8 +145,6 @@ export class RenderingService {
    * @param gridSize - Size of the grid (number of tiles per side)
    */
   centerGrid(canvasWidth: number, canvasHeight: number, gridSize: number): void {
-    console.log('🎯 Centering grid:', { canvasWidth, canvasHeight, gridSize });
-    
     // For isometric grid, calculate the actual rendered size
     const tileWidth = this.config.tileWidth;
     const tileHeight = this.config.tileHeight;
@@ -160,13 +158,6 @@ export class RenderingService {
     // Center the grid in the available space
     this.config.mapOffsetX = (canvasWidth - totalGridWidth) / 2 + (totalGridWidth / 2);
     this.config.mapOffsetY = (canvasHeight - totalGridHeight) / 2 + (totalGridHeight / 4);
-    
-    console.log('✅ Grid centered at:', { 
-      offsetX: this.config.mapOffsetX, 
-      offsetY: this.config.mapOffsetY,
-      totalGridWidth,
-      totalGridHeight
-    });
   }
 
   // Graphics Clearing

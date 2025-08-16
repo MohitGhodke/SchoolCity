@@ -11,19 +11,9 @@ export class MainSceneFactory {
       const PhaserModule = Phaser.default || Phaser;
       const Scene = PhaserModule.Scene || Phaser.Scene;
       
-      console.log('🔍 Phaser import check:', { 
-        hasDefault: !!Phaser.default, 
-        hasDirectScene: !!Phaser.Scene, 
-        hasModuleScene: !!(PhaserModule?.Scene),
-        SceneFound: !!Scene
-      });
-      
       if (!Scene) {
-        console.error('❌ No Scene class found!', { Phaser, PhaserModule });
         throw new Error('Phaser.Scene not available in any format');
       }
-      
-      console.log('✅ Using Scene class:', Scene);
       
       return class extends Scene {
         private gameEventService: GameEventService;
@@ -43,36 +33,26 @@ export class MainSceneFactory {
         private currentUnitId: string | null = null;
 
         constructor() {
-          console.log('🏗️ MainScene constructor called');
           super({ key: 'MainScene' });
-          console.log('✅ Super constructor completed');
           this.gameStateService = gameStateService;
           this.renderingService = renderingService;
           this.educationHierarchyService = educationHierarchyService;
           this.gameEventService = gameEventService;
           // Access municipalityManager through renderingService (which has it injected)
           this.municipalityManager = (renderingService as any).municipalityManager;
-          
-          if (!this.municipalityManager) {
-            console.error('❌ MunicipalityManager not found in RenderingService!');
-          }
-          console.log('✅ MainScene constructor completed');
         }
 
         preload(): void {
-          console.log('🏗️ MainScene preload called');
           // Load the school PNG image during preload phase
           (this as any)['load'].image('school', 'assets/images/school.png');
           
           // Handle loading errors
           (this as any)['load'].on('loaderror', (file: any) => {
-            console.error('Failed to load:', file.key);
             if (file.key === 'school') {
               // Create a fallback texture if PNG loading fails
               this.createFallbackTexture();
             }
           });
-          console.log('✅ MainScene preload completed');
         }
 
         createFallbackTexture(): void {
@@ -97,39 +77,20 @@ export class MainSceneFactory {
         }
 
         create(): void {
-          console.log('🏗️ MainScene create called');
-          
           try {
-            console.log('🎨 Creating graphics...');
-            
             const addObject = (this as any).add;
-            console.log('✅ Add object available:', !!addObject);
             
             if (addObject && typeof addObject.graphics === 'function') {
               this.graphics = addObject.graphics();
-              console.log('✅ Graphics created successfully');
               
               this.renderingService.setGraphics(this.graphics);
-              console.log('✅ Graphics set in rendering service');
-              
               this.renderingService.setScene(this);
-              console.log('✅ Scene set in rendering service');
 
               // Start the game
-              console.log('🚀 Starting game...');
               this.gameStateService.startGame();
-              console.log('✅ Game started');
 
               // Initial render of the actual game
-              console.log('🎨 Initial game render...');
               this.gameStateService.renderGame();
-              console.log('✅ Initial render completed');
-              
-              console.log('🎮 MainScene create completed successfully!');
-            } else {
-              console.error('❌ Graphics function not available');
-              console.log('Add object type:', typeof addObject);
-              console.log('Graphics function type:', typeof addObject?.graphics);
             }
           } catch (error) {
             console.error('❌ Error in MainScene create:', error);
