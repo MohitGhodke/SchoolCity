@@ -102,7 +102,6 @@ export class MainSceneFactory {
           try {
             console.log('🎨 Creating graphics...');
             
-            // Try different ways to access graphics
             const addObject = (this as any).add;
             console.log('✅ Add object available:', !!addObject);
             
@@ -110,15 +109,39 @@ export class MainSceneFactory {
               this.graphics = addObject.graphics();
               console.log('✅ Graphics created successfully');
               
-              // Draw a simple test rectangle to show the canvas is working
-              this.graphics.fillStyle(0x00ff00, 1);
-              this.graphics.fillRect(100, 100, 200, 100);
-              console.log('✅ Test rectangle drawn');
+              // Draw a much more visible test pattern
+              console.log('🎨 Drawing highly visible test patterns...');
+              
+              // Large bright red background rectangle
+              this.graphics.fillStyle(0xff0000, 1); // Bright red
+              this.graphics.fillRect(0, 0, 800, 600);
+              console.log('✅ Red background drawn');
+              
+              // Large bright green rectangle in center
+              this.graphics.fillStyle(0x00ff00, 1); // Bright green
+              this.graphics.fillRect(200, 150, 400, 300);
+              console.log('✅ Green center rectangle drawn');
+              
+              // Bright yellow border
+              this.graphics.lineStyle(10, 0xffff00, 1); // Thick yellow border
+              this.graphics.strokeRect(10, 10, 780, 580);
+              console.log('✅ Yellow border drawn');
+              
+              // Text to confirm canvas is working
+              const canvasElement = document.querySelector('canvas');
+              if (canvasElement) {
+                console.log('✅ Canvas element found:', canvasElement);
+                console.log('Canvas dimensions:', canvasElement.width, 'x', canvasElement.height);
+                console.log('Canvas style:', canvasElement.style.cssText);
+                console.log('Canvas position:', canvasElement.getBoundingClientRect());
+              } else {
+                console.error('❌ Canvas element not found!');
+              }
               
               this.renderingService.setGraphics(this.graphics);
               console.log('✅ Graphics set in rendering service');
               
-              this.renderingService.setScene(this); // Initialize sprite system
+              this.renderingService.setScene(this);
               console.log('✅ Scene set in rendering service');
 
               // Start the game
@@ -126,11 +149,7 @@ export class MainSceneFactory {
               this.gameStateService.startGame();
               console.log('✅ Game started');
 
-              // Initial render
-              console.log('🎨 Initial render...');
-              this.gameStateService.renderGame();
-              console.log('✅ Initial render completed');
-              
+              // Skip the game rendering for now to see if our test graphics show
               console.log('🎮 MainScene create completed successfully!');
             } else {
               console.error('❌ Graphics function not available');
