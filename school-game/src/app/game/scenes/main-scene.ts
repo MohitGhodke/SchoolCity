@@ -105,6 +105,8 @@ export class MainSceneFactory {
 
           // Listen for boundary selection from Angular
           (window as any).setSelectedBoundary = (boundaryId: string) => {
+            console.log('setSelectedBoundary called with:', boundaryId);
+            
             if (boundaryId.startsWith('paint:')) {
               // Handle new paint mode system
               const paintMode = boundaryId.replace('paint:', '');
@@ -116,7 +118,9 @@ export class MainSceneFactory {
                 this.setPaintMode(null);
                 this.isPlacingSchool = false;
                 this.selectedBoundary = null;
+                this.isSelecting = false; // Also clear selection state
                 console.log('Phaser scene: Pan mode activated, all paint states cleared');
+                console.log('Current state - paintMode:', this.paintMode, 'isPlacingSchool:', this.isPlacingSchool, 'selectedBoundary:', this.selectedBoundary);
               } else {
                 this.setPaintMode(paintMode);
               }
@@ -165,6 +169,30 @@ export class MainSceneFactory {
             this.pointerStartPos = { x: pointer.x, y: pointer.y };
             this.hasPanned = false;
             
+            // First, ALWAYS check for school clicks regardless of mode
+            // This ensures schools can be clicked even if mode states are confused
+            const { x, y } = this.renderingService.screenToGrid(pointer.x, pointer.y);
+            console.log('Pointer clicked at screen:', pointer.x, pointer.y, 'grid:', x, y);
+            
+            // Check if tile has school flag
+            const gridService = (this.gameStateService as any).gridService;
+            const tile = gridService?.getTile(x, y);
+            console.log('Tile at', x, y, ':', tile);
+            console.log('Tile hasSchool:', tile?.hasSchool);
+            
+            const school = this.gameStateService["schoolService"].getSchoolAtPosition(x, y);
+            console.log('School found at position:', school);
+            
+            if (school && this.gameEventService && !this.hasPanned) {
+              // School found - emit the click event immediately
+              console.log('✅ School clicked at position:', x, y, 'School:', school);
+              this.gameEventService.emitSchoolClicked({ ...school, x, y });
+              return; // Exit early - don't process other modes when clicking on a school
+            }
+            
+            // If no school was clicked, proceed with normal mode handling
+            console.log('Current mode state - paintMode:', this.paintMode, 'isPlacingSchool:', this.isPlacingSchool, 'selectedBoundary:', this.selectedBoundary);
+            
             if (this.paintMode) {
               // Use new paint system
               this.isSelecting = true;
@@ -174,13 +202,6 @@ export class MainSceneFactory {
             } else if (this.selectedBoundary) {
               this.isSelecting = true;
               this.assignBoundaryAt(pointer.x, pointer.y);
-            } else {
-              // Custom: Notify Angular if a school is clicked (but only if not panning)
-              const { x, y } = this.renderingService.screenToGrid(pointer.x, pointer.y);
-              const school = this.gameStateService["schoolService"].getSchoolAtPosition(x, y);
-              if (school && this.gameEventService && !this.hasPanned) {
-                this.gameEventService.schoolClicked$.next({ ...school, x, y });
-              }
             }
           });
           
@@ -196,11 +217,14 @@ export class MainSceneFactory {
               }
             }
             
-            if (this.isSelecting && this.paintMode && !this.hasPanned) {
-              // Continue painting while dragging (but not while panning)
-              this.paintAt(pointer.x, pointer.y);
-            } else if (this.isSelecting && this.selectedBoundary && !this.hasPanned) {
-              this.assignBoundaryAt(pointer.x, pointer.y);
+            // Only continue with paint/boundary operations if we're selecting AND haven't panned AND not clicked on a school
+            if (this.isSelecting && !this.hasPanned) {
+              if (this.paintMode) {
+                // Continue painting while dragging (but not while panning)
+                this.paintAt(pointer.x, pointer.y);
+              } else if (this.selectedBoundary) {
+                this.assignBoundaryAt(pointer.x, pointer.y);
+              }
             }
           });
           
@@ -316,14 +340,19 @@ export class MainSceneFactory {
         }
 
         setPaintMode(mode: string | null): void {
+          console.log('setPaintMode called with:', mode);
+          
           if (mode === null) {
             this.paintMode = null;
             this.isPlacingSchool = false;
             this.selectedBoundary = null;
+            this.isSelecting = false; // Clear selection state
+            console.log('Paint mode cleared - all states reset');
           } else {
             this.paintMode = mode as 'municipality' | 'area' | 'unit' | 'school' | 'clear';
             this.isPlacingSchool = (mode === 'school');
             this.selectedBoundary = null; // Clear old selection system
+            console.log('Paint mode set to:', this.paintMode);
           }
           
           // Reset active IDs when switching modes to start fresh with each mode

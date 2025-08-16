@@ -546,8 +546,11 @@ export class GameComponent implements OnInit, OnDestroy {
         // Listen for school tile clicks from Phaser scene via GameEventService
         this.schoolClickedSubscription = this.gameEventService.schoolClicked$.subscribe((school: any) => {
           this.ngZone.run(() => {
+            console.log('Angular: School click event received:', school);
             this.selectedSchool = { ...school };
             this.selectedSchoolPos = { x: school.x, y: school.y };
+            console.log('Angular: selectedSchool set to:', this.selectedSchool);
+            console.log('Angular: selectedSchoolPos set to:', this.selectedSchoolPos);
             this.cdRef.markForCheck();
             this.cdRef.detectChanges();
             // Double-check: force another detection cycle
@@ -659,6 +662,8 @@ export class GameComponent implements OnInit, OnDestroy {
    * Handle boundary selection from the UI
    */
   onBoundarySelected(boundaryId: string): void {
+    console.log('onBoundarySelected called with:', boundaryId);
+    
     // Show status message for mode changes
     if (boundaryId.startsWith('paint:')) {
       const mode = boundaryId.replace('paint:', '');
@@ -686,7 +691,8 @@ export class GameComponent implements OnInit, OnDestroy {
         case 'pan':
           this.selectedBoundary = null; // Clear paint mode to enable pan
           this.showStatusMessage('Pan Mode activated');
-          console.log('Pan mode activated, selectedBoundary set to null');
+          console.log('Angular: Pan mode activated, selectedBoundary set to null');
+          console.log('Angular state - selectedBoundary:', this.selectedBoundary);
           break;
         default:
           this.selectedBoundary = boundaryId;
@@ -695,6 +701,8 @@ export class GameComponent implements OnInit, OnDestroy {
     } else {
       this.selectedBoundary = boundaryId;
     }
+    
+    console.log('Final selectedBoundary value:', this.selectedBoundary);
     
     // Sync with Phaser scene
     if (typeof window !== 'undefined' && (window as any).setSelectedBoundary) {
@@ -729,6 +737,9 @@ export class GameComponent implements OnInit, OnDestroy {
       
       // Force a style recalculation to ensure cursor change is applied immediately
       gameContainer.offsetHeight;
+      
+      // Also log the current state for debugging
+      console.log('Current visual state - classes:', gameContainer.classList.toString());
     }
   }
 
