@@ -111,6 +111,12 @@ export class MainSceneFactory {
               if (paintMode === 'reset_municipality') {
                 // Reset current municipality to start a new one
                 this.currentMunicipalityId = null;
+              } else if (paintMode === 'pan') {
+                // Clear paint mode to enable panning
+                this.setPaintMode(null);
+                this.isPlacingSchool = false;
+                this.selectedBoundary = null;
+                console.log('Phaser scene: Pan mode activated, all paint states cleared');
               } else {
                 this.setPaintMode(paintMode);
               }
@@ -121,6 +127,36 @@ export class MainSceneFactory {
               this.isPlacingSchool = false;
               this.selectedBoundary = boundaryId;
             }
+          };
+
+          // Expose current paint mode for pan detection
+          (window as any).getCurrentPaintMode = () => {
+            return this.paintMode;
+          };
+
+          // Expose current boundary selection for pan detection
+          (window as any).getCurrentBoundarySelection = () => {
+            return this.selectedBoundary;
+          };
+
+          // Notify Angular when paint mode changes for visual feedback
+          (window as any).notifyPaintModeChange = () => {
+            if (typeof window !== 'undefined' && (window as any).updatePaintModeVisuals) {
+              (window as any).updatePaintModeVisuals();
+            }
+          };
+
+          // Expose grid click handler for drag painting (respects paint mode)
+          (window as any).handleGridClick = (x: number, y: number) => {
+            // Only allow painting if we're in an actual paint mode (not pan mode)
+            if (this.paintMode) {
+              this.paintAt(x, y);
+            } else if (this.isPlacingSchool) {
+              this.tryPlaceSchoolAt(x, y);
+            } else if (this.selectedBoundary) {
+              this.assignBoundaryAt(x, y);
+            }
+            // In pan mode (paintMode = null), do nothing - no painting allowed
           };
 
           // Set up input handling for click-and-drag selection
@@ -279,10 +315,16 @@ export class MainSceneFactory {
           // Use the hierarchy for gameplay or rendering logic
         }
 
-        setPaintMode(mode: string): void {
-          this.paintMode = mode as 'municipality' | 'area' | 'unit' | 'school' | 'clear';
-          this.isPlacingSchool = (mode === 'school');
-          this.selectedBoundary = null; // Clear old selection system
+        setPaintMode(mode: string | null): void {
+          if (mode === null) {
+            this.paintMode = null;
+            this.isPlacingSchool = false;
+            this.selectedBoundary = null;
+          } else {
+            this.paintMode = mode as 'municipality' | 'area' | 'unit' | 'school' | 'clear';
+            this.isPlacingSchool = (mode === 'school');
+            this.selectedBoundary = null; // Clear old selection system
+          }
           
           // Reset active IDs when switching modes to start fresh with each mode
           if (mode !== 'municipality') {
@@ -293,6 +335,11 @@ export class MainSceneFactory {
           }
           if (mode !== 'unit') {
             this.currentUnitId = null;
+          }
+          
+          // Notify Angular about paint mode change for visual feedback
+          if (typeof window !== 'undefined' && (window as any).notifyPaintModeChange) {
+            (window as any).notifyPaintModeChange();
           }
         }
 

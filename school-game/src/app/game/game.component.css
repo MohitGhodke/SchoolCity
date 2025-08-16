@@ -38,6 +38,47 @@
   --button-disabled: #2a2a2a;
 }
 
+/* Status Message */
+.status-message {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: var(--button-bg-translucent);
+  backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid var(--button-bg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.status-message.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Mobile positioning for status message */
+@media (max-width: 768px) {
+  .status-message {
+    top: 80px; /* Position below the top control bar */
+    left: 50%;
+    transform: translateX(-50%) translateY(-10px);
+    max-width: calc(100vw - 40px);
+    text-align: center;
+  }
+  
+  .status-message.visible {
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
 /* Game component styles */
 :host {
   display: block;
@@ -90,6 +131,20 @@
   align-items: center;
   background: transparent;
   z-index: 1;
+}
+
+/* Paint/Pan mode cursor styles */
+#gameContainer.paint-mode-active * {
+  cursor: crosshair !important;
+}
+
+#gameContainer.pan-mode-active *,
+#gameContainer:not(.paint-mode-active) * {
+  cursor: grab !important;
+}
+
+#gameContainer:not(.paint-mode-active):active {
+  cursor: grabbing !important;
 }
 
 /* Phaser canvas styling */

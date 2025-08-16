@@ -54,6 +54,15 @@ import { MunicipalityManagerService } from '../services/municipality-manager.ser
           <span class="material-icons-outlined">backspace</span>
           <span>Erase</span>
         </button>
+        
+        <!-- Pan Mode -->
+        <button class="paint-tool pan-tool" 
+                [class.active]="paintMode === null"
+                (click)="setPanMode()"
+                title="Pan Mode - Navigate around the grid">
+          <span class="material-icons-outlined">pan_tool</span>
+          <span>Pan</span>
+        </button>
       </div>
       
       <!-- Status (desktop only) -->
@@ -403,6 +412,15 @@ export class BoundarySelectorComponent {
     this.boundarySelected.emit(`paint:${mode}`);
   }
   
+  setPanMode() {
+    // Clear paint mode to enable panning
+    this.paintMode = null;
+    this.isSchoolMode = false;
+    
+    // Emit pan mode to the game scene
+    this.boundarySelected.emit('paint:pan');
+  }
+  
   startNewMunicipality() {
     // Reset the current municipality to start a new one
     this.boundarySelected.emit('paint:reset_municipality');
@@ -425,6 +443,7 @@ export class BoundarySelectorComponent {
       case 'unit': return 'Unit Brush';
       case 'school': return 'School Placer';
       case 'clear': return 'Eraser';
+      case null: return 'Pan Mode';
       default: return 'Select a tool';
     }
   }
@@ -436,6 +455,7 @@ export class BoundarySelectorComponent {
       case 'unit': return 'Click/drag on area tiles to create units within them.';
       case 'school': return 'Click on unit tiles to place schools. Schools can only be placed on units.';
       case 'clear': return 'Click/drag on any painted tile to erase it and return it to green.';
+      case null: return 'Pan mode active - tap/drag to move the camera. Select a tool below to start painting.';
       default: return 'Choose a paint tool to start building your city hierarchy';
     }
   }

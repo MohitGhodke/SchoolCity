@@ -65,6 +65,11 @@ import { GAME_CONSTANTS } from './constants/game-constants';
   standalone: true,
   imports: [CommonModule, BoundarySelectorComponent, ThemeToggleComponent],
   template: `
+    <!-- Status message overlay -->
+    <div class="status-message" [class.visible]="isStatusMessageVisible">
+      {{ statusMessage }}
+    </div>
+
     <!-- Top control bar with utilities and theme toggle -->
     <div class="control-bar">
       <div class="control-group">
@@ -127,6 +132,16 @@ export class GameComponent implements OnInit, OnDestroy {
   /** Currently selected boundary type for painting */
   selectedBoundary: string | null = null;
 
+  // Status Message Properties
+  /** Current status message to display */
+  statusMessage: string = '';
+  
+  /** Whether status message is visible */
+  isStatusMessageVisible: boolean = false;
+  
+  /** Timeout reference for hiding status message */
+  private statusMessageTimeout: any = null;
+
   // Touch Input Properties  
   /** Last recorded distance between two touch points for pinch-to-zoom */
   private lastTouchDist: number | null = null;
@@ -134,6 +149,9 @@ export class GameComponent implements OnInit, OnDestroy {
   // Pan/Drag Properties
   /** Whether the user is currently panning/dragging the grid */
   private isPanning: boolean = false;
+  
+  /** Whether the user is actively dragging for paint operations */
+  private isPaintDragging: boolean = false;
   
   /** Last recorded pointer position for calculating pan delta */
   private lastPointerPos: { x: number; y: number } | null = null;
@@ -286,9 +304,16 @@ export class GameComponent implements OnInit, OnDestroy {
       // Two finger gesture - prepare for pinch zoom
       this.lastTouchDist = this.getTouchDist(e);
       this.isPanning = false;
+      this.isPaintDragging = false;
     } else if (e.touches.length === 1) {
-      // Single finger gesture - prepare for pan
-      this.startPan(e.touches[0].clientX, e.touches[0].clientY);
+      // Single finger gesture
+      if (this.isPaintModeActive()) {
+        // Start paint dragging
+        this.isPaintDragging = true;
+      } else {
+        // Prepare for pan
+        this.startPan(e.touches[0].clientX, e.touches[0].clientY);
+      }
     }
   };
 
@@ -308,10 +333,16 @@ export class GameComponent implements OnInit, OnDestroy {
         this.gameStateService.renderGame();
         this.lastTouchDist = newDist;
       }
-    } else if (e.touches.length === 1 && this.isPanning) {
-      // Single finger pan
-      e.preventDefault();
-      this.updatePan(e.touches[0].clientX, e.touches[0].clientY);
+    } else if (e.touches.length === 1) {
+      if (this.isPanning && !this.isPaintModeActive()) {
+        // Single finger pan - only when not in paint mode
+        e.preventDefault();
+        this.updatePan(e.touches[0].clientX, e.touches[0].clientY);
+      } else if (this.isPaintDragging && this.isPaintModeActive()) {
+        // Paint mode dragging - only when actively dragging
+        e.preventDefault();
+        this.handlePaintDrag(e.touches[0].clientX, e.touches[0].clientY);
+      }
     }
   };
 
@@ -324,6 +355,7 @@ export class GameComponent implements OnInit, OnDestroy {
     }
     if (e.touches.length === 0) {
       this.endPan();
+      this.isPaintDragging = false; // Stop paint dragging
     }
   };
 
@@ -386,9 +418,14 @@ export class GameComponent implements OnInit, OnDestroy {
    * Handle mouse down for pan start
    */
   onMouseDown = (e: MouseEvent): void => {
-    // Only start pan on left mouse button and not if it's a right-click or modifier
     if (e.button === 0 && !e.ctrlKey && !e.shiftKey && !e.altKey) {
-      this.startPan(e.clientX, e.clientY);
+      if (this.isPaintModeActive()) {
+        // Start paint dragging
+        this.isPaintDragging = true;
+      } else {
+        // Start pan
+        this.startPan(e.clientX, e.clientY);
+      }
     }
   };
 
@@ -396,9 +433,13 @@ export class GameComponent implements OnInit, OnDestroy {
    * Handle mouse move for pan update
    */
   onMouseMove = (e: MouseEvent): void => {
-    if (this.isPanning) {
+    if (this.isPanning && !this.isPaintModeActive()) {
       e.preventDefault();
       this.updatePan(e.clientX, e.clientY);
+    } else if (this.isPaintDragging && this.isPaintModeActive()) {
+      // Paint mode dragging - only when actively dragging
+      e.preventDefault();
+      this.handlePaintDrag(e.clientX, e.clientY);
     }
   };
 
@@ -409,6 +450,8 @@ export class GameComponent implements OnInit, OnDestroy {
     if (this.isPanning) {
       this.endPan();
     }
+    // Always stop paint dragging on mouse up
+    this.isPaintDragging = false;
   };
 
   // Lifecycle Methods
@@ -554,6 +597,11 @@ export class GameComponent implements OnInit, OnDestroy {
       this.themeSubscription.unsubscribe();
     }
     
+    // Clear status message timeout
+    if (this.statusMessageTimeout) {
+      clearTimeout(this.statusMessageTimeout);
+    }
+    
     // Destroy the Phaser game instance
     this.gameEngineService.destroyGame();
   }
@@ -561,13 +609,126 @@ export class GameComponent implements OnInit, OnDestroy {
   // Game Action Methods
 
   /**
+   * Check if any paint mode is currently active
+   */
+  private isPaintModeActive(): boolean {
+    return this.selectedBoundary !== null && this.selectedBoundary.startsWith('paint:') && !this.selectedBoundary.includes('pan');
+  }
+
+  /**
+   * Handle paint dragging operations
+   */
+  private handlePaintDrag(clientX: number, clientY: number): void {
+    // Trigger paint operation at the current position
+    if (typeof window !== 'undefined' && (window as any).handleGridClick) {
+      // Convert screen coordinates to canvas-relative coordinates
+      const gameContainer = this.gameContainer?.nativeElement;
+      if (gameContainer) {
+        const rect = gameContainer.getBoundingClientRect();
+        const canvasX = clientX - rect.left;
+        const canvasY = clientY - rect.top;
+        
+        // Call the Phaser paint handler
+        (window as any).handleGridClick(canvasX, canvasY);
+      }
+    }
+  }
+
+  /**
+   * Show a temporary status message
+   */
+  private showStatusMessage(message: string, duration: number = 3000): void {
+    // Clear any existing timeout
+    if (this.statusMessageTimeout) {
+      clearTimeout(this.statusMessageTimeout);
+    }
+    
+    // Set message and show it
+    this.statusMessage = message;
+    this.isStatusMessageVisible = true;
+    this.cdRef.detectChanges();
+    
+    // Hide after duration
+    this.statusMessageTimeout = setTimeout(() => {
+      this.isStatusMessageVisible = false;
+      this.cdRef.detectChanges();
+    }, duration);
+  }
+
+  /**
    * Handle boundary selection from the UI
    */
   onBoundarySelected(boundaryId: string): void {
-    this.selectedBoundary = boundaryId;
+    // Show status message for mode changes
+    if (boundaryId.startsWith('paint:')) {
+      const mode = boundaryId.replace('paint:', '');
+      switch (mode) {
+        case 'municipality':
+          this.selectedBoundary = boundaryId;
+          this.showStatusMessage('Paint Mode: Municipality Brush activated');
+          break;
+        case 'area':
+          this.selectedBoundary = boundaryId;
+          this.showStatusMessage('Paint Mode: Area Brush activated');
+          break;
+        case 'unit':
+          this.selectedBoundary = boundaryId;
+          this.showStatusMessage('Paint Mode: Unit Brush activated');
+          break;
+        case 'school':
+          this.selectedBoundary = boundaryId;
+          this.showStatusMessage('Paint Mode: School Placer activated');
+          break;
+        case 'clear':
+          this.selectedBoundary = boundaryId;
+          this.showStatusMessage('Paint Mode: Eraser activated');
+          break;
+        case 'pan':
+          this.selectedBoundary = null; // Clear paint mode to enable pan
+          this.showStatusMessage('Pan Mode activated');
+          console.log('Pan mode activated, selectedBoundary set to null');
+          break;
+        default:
+          this.selectedBoundary = boundaryId;
+          this.showStatusMessage('Paint Mode activated');
+      }
+    } else {
+      this.selectedBoundary = boundaryId;
+    }
+    
     // Sync with Phaser scene
     if (typeof window !== 'undefined' && (window as any).setSelectedBoundary) {
-      (window as any).setSelectedBoundary(boundaryId);
+      (window as any).setSelectedBoundary(this.selectedBoundary);
+    }
+    
+    // Update visual feedback for the new mode immediately and after a slight delay
+    this.updatePaintModeVisuals();
+    setTimeout(() => {
+      this.updatePaintModeVisuals();
+    }, 10);
+  }
+
+  /**
+   * Update visual feedback for paint vs pan mode
+   */
+  private updatePaintModeVisuals(): void {
+    const gameContainer = this.gameContainer?.nativeElement;
+    if (gameContainer) {
+      const isPaintActive = this.isPaintModeActive();
+      console.log('updatePaintModeVisuals: isPaintActive =', isPaintActive, 'selectedBoundary =', this.selectedBoundary);
+      
+      if (isPaintActive) {
+        gameContainer.classList.add('paint-mode-active');
+        gameContainer.classList.remove('pan-mode-active');
+        console.log('Added paint-mode-active class, removed pan-mode-active');
+      } else {
+        gameContainer.classList.remove('paint-mode-active');
+        gameContainer.classList.add('pan-mode-active');
+        console.log('Removed paint-mode-active class, added pan-mode-active');
+      }
+      
+      // Force a style recalculation to ensure cursor change is applied immediately
+      gameContainer.offsetHeight;
     }
   }
 
