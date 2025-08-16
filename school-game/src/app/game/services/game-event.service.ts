@@ -5,4 +5,8 @@ import { ReplaySubject } from 'rxjs';
 export class GameEventService {
   // Emits a school object when a school tile is clicked in Phaser
   schoolClicked$ = new ReplaySubject<any>(1);
+  
+  emitSchoolClicked(school: any): void {
+    this.schoolClicked$.next(school);
+  }
 }

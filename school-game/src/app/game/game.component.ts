@@ -196,7 +196,9 @@ export class GameComponent implements OnInit, OnDestroy {
       return Math.sqrt(dx * dx + dy * dy);
     }
   async ngOnInit() {
+    console.log('🚀 GameComponent ngOnInit called');
     if (isPlatformBrowser(this.platformId)) {
+      console.log('🌐 Running in browser - starting game initialization');
       // Check if there's saved game data
       this.hasSavedData = this.gameDataService.hasSavedData();
       
@@ -217,9 +219,21 @@ export class GameComponent implements OnInit, OnDestroy {
         
         // Configure game
         const container = this.gameContainer.nativeElement;
+        console.log('🎮 Game container found:', !!container);
+        if (!container) {
+          console.error('❌ Game container element not found!');
+          return;
+        }
+        console.log('📐 Container dimensions:', {
+          offsetWidth: container.offsetWidth,
+          offsetHeight: container.offsetHeight,
+          clientWidth: container.clientWidth,
+          clientHeight: container.clientHeight
+        });
         // Use full window size in browser
         const width = window.innerWidth;
         const height = window.innerHeight;
+        console.log('🖥️ Game dimensions:', { width, height });
         
         // Get theme background color for Phaser (as string for GameConfig)
         const theme = this.themeService.getCurrentTheme();
@@ -231,13 +245,23 @@ export class GameComponent implements OnInit, OnDestroy {
           backgroundColor
         };
         // Create scene factory function
+        console.log('🔧 Creating scene factory with services');
+        console.log('🔧 Services available:', {
+          gameStateService: !!this.gameStateService,
+          renderingService: !!this.renderingService,
+          educationHierarchyService: !!this.educationHierarchyService,
+          gameEventService: !!this.gameEventService
+        });
   const sceneFactory = MainSceneFactory.createScene(this.gameStateService, this.renderingService, this.educationHierarchyService, this.gameEventService);
+        console.log('🏗️ Scene factory created:', !!sceneFactory);
         // Initialize game with the scene factory
+        console.log('🎮 Initializing game engine...');
         await this.gameEngineService.initializeGame(
           container,
           gameConfig,
           sceneFactory
         );
+        console.log('✅ Game engine initialized successfully');
         // Center the grid in the canvas after game is initialized
         this.renderingService.centerGrid(
           gameConfig.width,
@@ -302,8 +326,11 @@ export class GameComponent implements OnInit, OnDestroy {
           });
         });
       } catch (error) {
-        // (Error logging removed)
+        console.error('❌ Error during game initialization:', error);
+        console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       }
+    } else {
+      console.log('🖥️ Not in browser - skipping game initialization');
     }
   }
 
