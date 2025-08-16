@@ -6,7 +6,8 @@
     "start": "ng serve",
     "build": "ng build",
     "build:prod": "ng build --configuration production --base-href=/SchoolCity/",
-    "deploy": "ng build --configuration production --base-href=/SchoolCity/ && npx angular-cli-ghpages --dir=dist/school-game/browser",
+    "deploy": "npm run build:prod && npm run deploy:gh-pages",
+    "deploy:gh-pages": "npx angular-cli-ghpages --dir=dist/school-game/browser --no-silent",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:school-game": "node dist/school-game/server/server.mjs"
