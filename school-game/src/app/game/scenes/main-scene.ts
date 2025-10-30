@@ -113,6 +113,12 @@ export class MainSceneFactory {
               if (paintMode === 'reset_municipality') {
                 // Reset current municipality to start a new one
                 this.currentMunicipalityId = null;
+              } else if (paintMode === 'reset_area') {
+                // Reset current area to start a new one
+                this.currentAreaId = null;
+              } else if (paintMode === 'reset_unit') {
+                // Reset current unit to start a new one
+                this.currentUnitId = null;
               } else if (paintMode === 'pan') {
                 // Clear paint mode to enable panning
                 this.setPaintMode(null);

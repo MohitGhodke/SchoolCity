@@ -672,13 +672,25 @@ export class GameComponent implements OnInit, OnDestroy {
           this.selectedBoundary = boundaryId;
           this.showStatusMessage('Paint Mode: Municipality Brush activated');
           break;
+        case 'reset_municipality':
+          // Just pass through to Phaser - don't show message here
+          this.selectedBoundary = boundaryId;
+          break;
         case 'area':
           this.selectedBoundary = boundaryId;
           this.showStatusMessage('Paint Mode: Area Brush activated');
           break;
+        case 'reset_area':
+          // Just pass through to Phaser - don't show message here
+          this.selectedBoundary = boundaryId;
+          break;
         case 'unit':
           this.selectedBoundary = boundaryId;
           this.showStatusMessage('Paint Mode: Unit Brush activated');
+          break;
+        case 'reset_unit':
+          // Just pass through to Phaser - don't show message here
+          this.selectedBoundary = boundaryId;
           break;
         case 'school':
           this.selectedBoundary = boundaryId;
