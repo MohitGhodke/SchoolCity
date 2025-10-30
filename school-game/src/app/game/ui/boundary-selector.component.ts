@@ -22,8 +22,9 @@ import { MunicipalityManagerService } from '../services/municipality-manager.ser
         <button class="paint-tool area-tool" 
                 [class.active]="paintMode === 'area'"
                 (click)="setPaintMode('area')"
+                (dblclick)="startNewArea()"
                 [disabled]="!hasAnyMunicipality()"
-                title="Paint Area">
+                title="Paint Area (Double-click to start new area)">
           <span class="material-icons-outlined">map</span>
           <span>Area</span>
         </button>
@@ -31,8 +32,9 @@ import { MunicipalityManagerService } from '../services/municipality-manager.ser
         <button class="paint-tool unit-tool" 
                 [class.active]="paintMode === 'unit'"
                 (click)="setPaintMode('unit')"
+                (dblclick)="startNewUnit()"
                 [disabled]="!hasAnyArea()"
-                title="Paint Unit">
+                title="Paint Unit (Double-click to start new unit)">
           <span class="material-icons-outlined">domain</span>
           <span>Unit</span>
         </button>
@@ -425,6 +427,18 @@ export class BoundarySelectorComponent {
     // Reset the current municipality to start a new one
     this.boundarySelected.emit('paint:reset_municipality');
     this.setPaintMode('municipality');
+  }
+  
+  startNewArea() {
+    // Reset the current area to start a new one
+    this.boundarySelected.emit('paint:reset_area');
+    this.setPaintMode('area');
+  }
+  
+  startNewUnit() {
+    // Reset the current unit to start a new one
+    this.boundarySelected.emit('paint:reset_unit');
+    this.setPaintMode('unit');
   }
   
   updateButtonStates() {
