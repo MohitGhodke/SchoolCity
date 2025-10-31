@@ -7,7 +7,7 @@ This PR configures automated deployment for the SchoolCity application to GitHub
 ### Changes Made
 
 1. **Enhanced GitHub Actions Workflow** (`.github/workflows/deploy-to-gh-pages.yml`)
-   - Added deployment trigger for the current PR branch (`copilot/deploy-changes-to-production`)
+   - Added deployment trigger for feature branches (for testing before merge)
    - Added .nojekyll file creation step for GitHub Pages compatibility
    - Maintained existing triggers (main branch push and manual workflow dispatch)
 
@@ -25,7 +25,7 @@ This PR configures automated deployment for the SchoolCity application to GitHub
 ### Step 1: Check GitHub Actions
 1. Go to https://github.com/MohitGhodke/SchoolCity/actions
 2. Look for a workflow run named "Deploy to GitHub Pages"
-3. The most recent run should be from the `copilot/deploy-changes-to-production` branch
+3. The most recent run should be from your current branch
 4. Wait for the workflow to complete (typically 2-3 minutes)
 
 ### Step 2: Verify GitHub Pages
