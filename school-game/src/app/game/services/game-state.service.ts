@@ -29,6 +29,7 @@ import { ThemeService } from './theme.service';
 import { GameEventService } from './game-event.service';
 import { MunicipalityManagerService } from './municipality-manager.service';
 import { GameDataService } from './game-data.service';
+import { AssetService } from './asset.service';
 import { GAME_CONSTANTS } from '../constants/game-constants';
 import { EducationHierarchyService } from './education-hierarchy.service';
 import { School, Municipality, Area, Unit } from '../models/education-hierarchy.models';
@@ -109,7 +110,8 @@ export class GameStateService {
     private themeService: ThemeService,
     private gameEventService: GameEventService,
     private municipalityManager: MunicipalityManagerService,
-    private gameDataService: GameDataService
+    private gameDataService: GameDataService,
+    private assetService: AssetService
   ) {}
 
   startGame(): void {
@@ -226,7 +228,13 @@ export class GameStateService {
       }
     }
     
-    // Render all schools after tiles to ensure they appear on top
+    // Render all assets after tiles but before schools
+    const allAssets = this.assetService.getAllAssets();
+    for (const asset of allAssets) {
+      this.renderingService.drawAsset(asset);
+    }
+    
+    // Render all schools after tiles and assets to ensure they appear on top
     const allSchools = this.schoolService.getAllSchools();
     for (const school of allSchools) {
       // Position the school sprite at the visual center of the school area
