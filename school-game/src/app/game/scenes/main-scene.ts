@@ -33,8 +33,10 @@ export class MainSceneFactory {
         // Paint mode system
         private paintMode: 'municipality' | 'area' | 'unit' | 'school' | 'clear' | null = null;
         private currentMunicipalityId: string | null = null;
-        private currentAreaId: string | null = null;
-        private currentUnitId: string | null = null;
+        // Track current area per municipality (key: municipalityId, value: areaId)
+        private currentAreaPerMunicipality: Map<string, string> = new Map();
+        // Track current unit per area (key: areaId, value: unitId)
+        private currentUnitPerArea: Map<string, string> = new Map();
 
         constructor() {
           super({ key: 'MainScene' });
@@ -114,11 +116,11 @@ export class MainSceneFactory {
                 // Reset current municipality to start a new one
                 this.currentMunicipalityId = null;
               } else if (paintMode === 'reset_area') {
-                // Reset current area to start a new one
-                this.currentAreaId = null;
+                // Reset all current areas to start new ones
+                this.currentAreaPerMunicipality.clear();
               } else if (paintMode === 'reset_unit') {
-                // Reset current unit to start a new one
-                this.currentUnitId = null;
+                // Reset all current units to start new ones
+                this.currentUnitPerArea.clear();
               } else if (paintMode === 'pan') {
                 // Clear paint mode to enable panning
                 this.setPaintMode(null);
@@ -366,10 +368,10 @@ export class MainSceneFactory {
             this.currentMunicipalityId = null;
           }
           if (mode !== 'area') {
-            this.currentAreaId = null;
+            this.currentAreaPerMunicipality.clear();
           }
           if (mode !== 'unit') {
-            this.currentUnitId = null;
+            this.currentUnitPerArea.clear();
           }
           
           // Notify Angular about paint mode change for visual feedback
@@ -444,46 +446,50 @@ export class MainSceneFactory {
 
         paintArea(tile: any): void {
           if (tile.municipalityId && !tile.unitId) {
-            // Create a new area only if we don't have an active one for this municipality
-            if (!this.currentAreaId) {
+            // Get or create an area for this specific municipality
+            let currentAreaId: string | undefined = this.currentAreaPerMunicipality.get(tile.municipalityId);
+            
+            if (!currentAreaId) {
+              // Create a new area for this municipality
               const newArea = this.municipalityManager.addArea(tile.municipalityId);
               if (newArea) {
-                this.currentAreaId = newArea.id;
+                currentAreaId = newArea.id;
+                if (currentAreaId) {
+                  this.currentAreaPerMunicipality.set(tile.municipalityId, currentAreaId);
+                }
               }
             }
             
-            // Always assign the current active area to this tile (if it exists)
-            if (this.currentAreaId) {
-              // Verify the area belongs to the same municipality
-              const area = this.municipalityManager.getAreaById(this.currentAreaId);
-              if (area && area.municipalityId === tile.municipalityId) {
-                tile.areaId = this.currentAreaId;
-                tile.unitId = ''; // Clear unit when assigning area
-              }
+            // Assign the area to this tile
+            if (currentAreaId) {
+              tile.areaId = currentAreaId;
+              tile.unitId = ''; // Clear unit when assigning area
             }
           }
         }
 
         paintUnit(tile: any): void {
           if (tile.areaId && !tile.unitId) {
-            // Create a new unit only if we don't have an active one for this area
-            if (!this.currentUnitId) {
+            // Get or create a unit for this specific area
+            let currentUnitId: string | undefined = this.currentUnitPerArea.get(tile.areaId);
+            
+            if (!currentUnitId) {
+              // Create a new unit for this area
               const area = this.municipalityManager.getAreaById(tile.areaId);
               if (area) {
                 const newUnit = this.municipalityManager.addUnit(area.municipalityId, tile.areaId);
                 if (newUnit) {
-                  this.currentUnitId = newUnit.id;
+                  currentUnitId = newUnit.id;
+                  if (currentUnitId) {
+                    this.currentUnitPerArea.set(tile.areaId, currentUnitId);
+                  }
                 }
               }
             }
             
-            // Always assign the current active unit to this tile (if it exists)
-            if (this.currentUnitId) {
-              // Verify the unit belongs to the same area
-              const unit = this.municipalityManager.getUnitById(this.currentUnitId);
-              if (unit && unit.areaId === tile.areaId) {
-                tile.unitId = this.currentUnitId;
-              }
+            // Assign the unit to this tile
+            if (currentUnitId) {
+              tile.unitId = currentUnitId;
             }
           }
         }

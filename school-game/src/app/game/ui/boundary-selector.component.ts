@@ -465,8 +465,8 @@ export class BoundarySelectorComponent {
   getPaintInstruction(): string {
     switch (this.paintMode) {
       case 'municipality': return 'Click/drag to paint tiles with the same municipality color. Double-click Municipality button to start a new municipality.';
-      case 'area': return 'Click/drag on municipality tiles (colored) to create areas within them.';
-      case 'unit': return 'Click/drag on area tiles to create units within them.';
+      case 'area': return 'Click/drag on any municipality tiles to create areas. Each municipality gets its own area automatically. Double-click Area button to start new areas.';
+      case 'unit': return 'Click/drag on any area tiles to create units. Each area gets its own unit automatically. Double-click Unit button to start new units.';
       case 'school': return 'Click on unit tiles to place schools. Schools can only be placed on units.';
       case 'clear': return 'Click/drag on any painted tile to erase it and return it to green.';
       case null: return 'Pan mode active - tap/drag to move the camera. Select a tool below to start painting.';
