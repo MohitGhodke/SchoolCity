@@ -43,7 +43,15 @@
                 }
               ],
               "outputHashing": "all",
-              "outputMode": "static"
+              "outputMode": "static",
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": true
+                },
+                "fonts": false
+              }
             },
             "development": {
               "optimization": false,
