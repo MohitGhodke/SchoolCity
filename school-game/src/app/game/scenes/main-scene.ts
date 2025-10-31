@@ -47,7 +47,7 @@ export class MainSceneFactory {
         private currentUnitPerArea: Map<string, string> = new Map();
 
         // Asset mode system
-        private selectedAsset: any = null;
+        private selectedAsset: { category: any; type: string | null; isEraseMode: boolean } | null = null;
 
         constructor() {
           super({ key: 'MainScene' });

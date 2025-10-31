@@ -16,7 +16,8 @@ import {
   RoadType,
   TreeType,
   RoadAsset,
-  TreeAsset
+  TreeAsset,
+  AssetSaveData
 } from '../models/asset.models';
 
 /**
@@ -289,7 +290,7 @@ export class AssetService {
   /**
    * Export assets data for saving
    */
-  exportData(): any {
+  exportData(): AssetSaveData {
     const assetsArray = Array.from(this.assets.values());
     return {
       assets: assetsArray,
@@ -300,7 +301,7 @@ export class AssetService {
   /**
    * Import assets data from saved state
    */
-  importData(data: any): void {
+  importData(data: AssetSaveData): void {
     this.assets.clear();
     
     if (data && data.assets) {

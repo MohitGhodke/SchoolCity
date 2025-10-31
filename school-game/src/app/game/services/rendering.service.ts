@@ -380,7 +380,7 @@ export class RenderingService {
    * Draw an asset (road, tree, etc.) at the specified grid position
    * @param asset - Asset object with position, type, and visual properties
    */
-  drawAsset(asset: any): void {
+  drawAsset(asset: import('../models/asset.models').Asset): void {
     if (!this.graphics) return;
 
     const { sx, sy } = this.gridToScreen(asset.x, asset.y);
@@ -399,7 +399,7 @@ export class RenderingService {
   /**
    * Draw a road asset with appropriate style based on road type
    */
-  private drawRoadAsset(screenX: number, screenY: number, asset: any): void {
+  private drawRoadAsset(screenX: number, screenY: number, asset: import('../models/asset.models').Asset): void {
     if (!this.graphics) return;
 
     const tileW = this.config.tileWidth * this.zoom;
@@ -441,7 +441,7 @@ export class RenderingService {
   /**
    * Draw a tree asset with appropriate style based on tree type
    */
-  private drawTreeAsset(screenX: number, screenY: number, asset: any): void {
+  private drawTreeAsset(screenX: number, screenY: number, asset: import('../models/asset.models').Asset): void {
     if (!this.graphics) return;
 
     const treeSize = this.config.tileWidth * this.zoom * 0.4;
@@ -470,7 +470,7 @@ export class RenderingService {
   /**
    * Draw a generic asset (fallback for unknown types)
    */
-  private drawGenericAsset(screenX: number, screenY: number, asset: any): void {
+  private drawGenericAsset(screenX: number, screenY: number, asset: import('../models/asset.models').Asset): void {
     if (!this.graphics) return;
 
     const size = this.config.tileWidth * this.zoom * 0.5;

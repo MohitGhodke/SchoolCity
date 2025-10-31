@@ -5,6 +5,7 @@ import { MunicipalityManagerService, MunicipalityDefinition } from './municipali
 import { SchoolService, School } from './school.service';
 import { ThemeService } from './theme.service';
 import { AssetService } from './asset.service';
+import { AssetSaveData } from '../models/asset.models';
 
 export interface GameSaveData {
   version: string;
@@ -14,7 +15,7 @@ export interface GameSaveData {
   schools: School[];
   municipalityCounter: number;
   theme: 'light' | 'dark';
-  assets?: any; // Asset data from AssetService
+  assets?: AssetSaveData; // Asset data from AssetService
   metadata: {
     gridSize: number;
     totalTiles: number;

@@ -96,3 +96,13 @@ export interface AssetDefinition {
   /** Icon for UI (Material Icons name) */
   icon?: string;
 }
+
+/**
+ * Asset save data structure for persistence
+ */
+export interface AssetSaveData {
+  /** Array of all placed assets */
+  assets: Asset[];
+  /** Counter for generating unique asset IDs */
+  assetIdCounter: number;
+}
