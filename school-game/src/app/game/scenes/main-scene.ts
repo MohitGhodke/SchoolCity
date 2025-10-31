@@ -2,9 +2,16 @@ import { GameStateService } from '../services/game-state.service';
 import { RenderingService } from '../services/rendering.service';
 import { EducationHierarchyService } from '../services/education-hierarchy.service';
 import { GameEventService } from '../services/game-event.service';
+import { AssetService } from '../services/asset.service';
 
 export class MainSceneFactory {
-  static createScene(gameStateService: GameStateService, renderingService: RenderingService, educationHierarchyService: EducationHierarchyService, gameEventService: GameEventService): any {
+  static createScene(
+    gameStateService: GameStateService, 
+    renderingService: RenderingService, 
+    educationHierarchyService: EducationHierarchyService, 
+    gameEventService: GameEventService,
+    assetService: AssetService
+  ): any {
     // Return a function that will create the scene class when called
     return function(Phaser: any) {
       // Handle different import formats for production builds
@@ -21,6 +28,7 @@ export class MainSceneFactory {
         private gameStateService: GameStateService;
         private renderingService: RenderingService;
         private educationHierarchyService: EducationHierarchyService;
+        private assetService: AssetService;
         private municipalityManager: any;
         private isSelecting: boolean = false;
         private selectedBoundary: string | null = null;
@@ -38,12 +46,16 @@ export class MainSceneFactory {
         // Track current unit per area (key: areaId, value: unitId)
         private currentUnitPerArea: Map<string, string> = new Map();
 
+        // Asset mode system
+        private selectedAsset: { category: any; type: string | null; isEraseMode: boolean } | null = null;
+
         constructor() {
           super({ key: 'MainScene' });
           this.gameStateService = gameStateService;
           this.renderingService = renderingService;
           this.educationHierarchyService = educationHierarchyService;
           this.gameEventService = gameEventService;
+          this.assetService = assetService;
           // Access municipalityManager through renderingService (which has it injected)
           this.municipalityManager = (renderingService as any).municipalityManager;
         }
@@ -141,6 +153,12 @@ export class MainSceneFactory {
             }
           };
 
+          // Listen for asset selection from Angular
+          (window as any).setSelectedAsset = (assetEvent: any) => {
+            console.log('setSelectedAsset called with:', assetEvent);
+            this.selectedAsset = assetEvent;
+          };
+
           // Expose current paint mode for pan detection
           (window as any).getCurrentPaintMode = () => {
             return this.paintMode;
@@ -199,9 +217,16 @@ export class MainSceneFactory {
             }
             
             // If no school was clicked, proceed with normal mode handling
-            console.log('Current mode state - paintMode:', this.paintMode, 'isPlacingSchool:', this.isPlacingSchool, 'selectedBoundary:', this.selectedBoundary);
+            console.log('Current mode state - paintMode:', this.paintMode, 'isPlacingSchool:', this.isPlacingSchool, 'selectedBoundary:', this.selectedBoundary, 'selectedAsset:', this.selectedAsset);
             
-            if (this.paintMode) {
+            // Check for asset mode first
+            if (this.selectedAsset && this.selectedAsset.category) {
+              this.isSelecting = true;
+              this.handleAssetClick(pointer.x, pointer.y);
+            } else if (this.selectedAsset && this.selectedAsset.isEraseMode) {
+              this.isSelecting = true;
+              this.handleAssetErase(pointer.x, pointer.y);
+            } else if (this.paintMode) {
               // Use new paint system
               this.isSelecting = true;
               this.paintAt(pointer.x, pointer.y);
@@ -227,7 +252,13 @@ export class MainSceneFactory {
             
             // Only continue with paint/boundary operations if we're selecting AND haven't panned AND not clicked on a school
             if (this.isSelecting && !this.hasPanned) {
-              if (this.paintMode) {
+              if (this.selectedAsset && this.selectedAsset.category) {
+                // Continue placing assets while dragging
+                this.handleAssetClick(pointer.x, pointer.y);
+              } else if (this.selectedAsset && this.selectedAsset.isEraseMode) {
+                // Continue erasing assets while dragging
+                this.handleAssetErase(pointer.x, pointer.y);
+              } else if (this.paintMode) {
                 // Continue painting while dragging (but not while panning)
                 this.paintAt(pointer.x, pointer.y);
               } else if (this.selectedBoundary) {
@@ -594,6 +625,54 @@ export class MainSceneFactory {
             // If unit is not used anywhere, remove it
             if (!unitStillUsed) {
               this.municipalityManager.removeUnit(unitId);
+            }
+          }
+        }
+
+        handleAssetClick(screenX: number, screenY: number): void {
+          const { x, y } = this.renderingService.screenToGrid(screenX, screenY);
+          const gridService = (this.gameStateService as any).gridService;
+          
+          if (!gridService || !gridService.isValidPosition(x, y)) return;
+          
+          // Check if an asset is already at this position
+          if (this.assetService.hasAssetAt(x, y)) {
+            console.log(`Cannot place asset at (${x}, ${y}) - position already has an asset`);
+            return;
+          }
+          
+          // Place the asset if we have a valid selection
+          if (this.selectedAsset && this.selectedAsset.type && this.selectedAsset.category) {
+            const asset = this.assetService.placeAsset(x, y, this.selectedAsset.type, this.selectedAsset.category);
+            
+            if (asset) {
+              // Re-render the game after placing asset
+              this.gameStateService.renderGame();
+              
+              // Auto-save after asset placement
+              if (typeof window !== 'undefined' && (window as any).autoSaveGame) {
+                (window as any).autoSaveGame();
+              }
+            }
+          }
+        }
+
+        handleAssetErase(screenX: number, screenY: number): void {
+          const { x, y } = this.renderingService.screenToGrid(screenX, screenY);
+          const gridService = (this.gameStateService as any).gridService;
+          
+          if (!gridService || !gridService.isValidPosition(x, y)) return;
+          
+          // Remove the asset if one exists at this position
+          const removed = this.assetService.removeAsset(x, y);
+          
+          if (removed) {
+            // Re-render the game after removing asset
+            this.gameStateService.renderGame();
+            
+            // Auto-save after asset removal
+            if (typeof window !== 'undefined' && (window as any).autoSaveGame) {
+              (window as any).autoSaveGame();
             }
           }
         }
