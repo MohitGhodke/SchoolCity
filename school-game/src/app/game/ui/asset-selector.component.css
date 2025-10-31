@@ -1,0 +1,312 @@
+/**
+ * Asset Selector Component Styles
+ */
+
+.asset-toolbar {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+.asset-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--color-bg-secondary, #ffffff);
+  border: 2px solid var(--color-border, #e1ebf0);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary, #1a1a1a);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.asset-toggle-btn:hover {
+  background: var(--color-bg-hover, #f5f5f5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.asset-toggle-btn .material-icons-outlined {
+  font-size: 20px;
+}
+
+.asset-toggle-btn .btn-label {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .asset-toggle-btn .btn-label {
+    display: inline;
+  }
+}
+
+/* Asset menu */
+.asset-menu {
+  margin-top: 12px;
+  background: var(--color-bg-secondary, #ffffff);
+  border: 2px solid var(--color-border, #e1ebf0);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  max-width: 350px;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Category tabs */
+.asset-categories {
+  display: flex;
+  border-bottom: 2px solid var(--color-border, #e1ebf0);
+  background: var(--color-bg-tertiary, #f8f9fa);
+}
+
+.category-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--color-text-secondary, #666);
+  transition: all 0.2s ease;
+}
+
+.category-tab:hover {
+  background: var(--color-bg-hover, #e9ecef);
+  color: var(--color-text-primary, #1a1a1a);
+}
+
+.category-tab.active {
+  background: var(--color-bg-secondary, #ffffff);
+  color: var(--color-primary, #3b82f6);
+  font-weight: 600;
+  border-bottom: 3px solid var(--color-primary, #3b82f6);
+}
+
+.category-tab .material-icons-outlined {
+  font-size: 24px;
+}
+
+/* Asset palette */
+.asset-palette {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.palette-header {
+  padding: 12px 16px;
+  background: var(--color-bg-tertiary, #f8f9fa);
+  border-bottom: 1px solid var(--color-border, #e1ebf0);
+}
+
+.palette-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary, #1a1a1a);
+}
+
+.asset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  padding: 12px;
+}
+
+.asset-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px;
+  background: var(--color-bg-secondary, #ffffff);
+  border: 2px solid var(--color-border, #e1ebf0);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 80px;
+}
+
+.asset-item:hover {
+  background: var(--color-bg-hover, #f5f5f5);
+  border-color: var(--color-primary, #3b82f6);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.asset-item.active {
+  background: var(--color-primary-light, #dbeafe);
+  border-color: var(--color-primary, #3b82f6);
+  border-width: 3px;
+}
+
+.asset-item .material-icons-outlined {
+  font-size: 32px;
+  color: var(--color-primary, #3b82f6);
+}
+
+.asset-preview {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  border: 2px solid var(--color-border, #e1ebf0);
+}
+
+.asset-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-primary, #1a1a1a);
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* Asset controls */
+.asset-controls {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: var(--color-bg-tertiary, #f8f9fa);
+  border-top: 2px solid var(--color-border, #e1ebf0);
+}
+
+.control-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--color-bg-secondary, #ffffff);
+  border: 2px solid var(--color-border, #e1ebf0);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary, #1a1a1a);
+  transition: all 0.2s ease;
+}
+
+.control-btn:hover {
+  background: var(--color-bg-hover, #f5f5f5);
+  border-color: var(--color-primary, #3b82f6);
+}
+
+.control-btn.active {
+  background: var(--color-danger, #ef4444);
+  color: white;
+  border-color: var(--color-danger, #ef4444);
+}
+
+.control-btn .material-icons-outlined {
+  font-size: 18px;
+}
+
+.erase-btn.active .material-icons-outlined {
+  animation: shake 0.5s ease infinite;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+/* Scrollbar styling */
+.asset-palette::-webkit-scrollbar {
+  width: 8px;
+}
+
+.asset-palette::-webkit-scrollbar-track {
+  background: var(--color-bg-tertiary, #f8f9fa);
+}
+
+.asset-palette::-webkit-scrollbar-thumb {
+  background: var(--color-border, #cbd5e0);
+  border-radius: 4px;
+}
+
+.asset-palette::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary, #999);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .asset-toolbar {
+    top: 60px;
+    right: 10px;
+  }
+
+  .asset-menu {
+    max-width: calc(100vw - 20px);
+  }
+
+  .asset-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .asset-item {
+    min-height: 70px;
+    padding: 8px 4px;
+  }
+
+  .asset-item .material-icons-outlined {
+    font-size: 28px;
+  }
+
+  .asset-name {
+    font-size: 10px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .asset-toggle-btn,
+  .asset-menu,
+  .category-tab.active,
+  .asset-item,
+  .control-btn {
+    background: var(--color-bg-secondary-dark, #2d3748);
+  }
+
+  .asset-toggle-btn,
+  .asset-menu {
+    border-color: var(--color-border-dark, #4a5568);
+  }
+
+  .asset-categories,
+  .palette-header,
+  .asset-controls {
+    background: var(--color-bg-tertiary-dark, #1a202c);
+  }
+
+  .category-tab,
+  .asset-name,
+  .control-btn {
+    color: var(--color-text-primary-dark, #e2e8f0);
+  }
+
+  .category-tab:hover,
+  .control-btn:hover {
+    background: var(--color-bg-hover-dark, #4a5568);
+  }
+}

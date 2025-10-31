@@ -376,6 +376,111 @@ export class RenderingService {
     return sprite;
   }
 
+  /**
+   * Draw an asset (road, tree, etc.) at the specified grid position
+   * @param asset - Asset object with position, type, and visual properties
+   */
+  drawAsset(asset: any): void {
+    if (!this.graphics) return;
+
+    const { sx, sy } = this.gridToScreen(asset.x, asset.y);
+    
+    // Draw different shapes based on asset category
+    if (asset.category === 'roads') {
+      this.drawRoadAsset(sx, sy, asset);
+    } else if (asset.category === 'trees') {
+      this.drawTreeAsset(sx, sy, asset);
+    } else {
+      // Generic asset rendering
+      this.drawGenericAsset(sx, sy, asset);
+    }
+  }
+
+  /**
+   * Draw a road asset with appropriate style based on road type
+   */
+  private drawRoadAsset(screenX: number, screenY: number, asset: any): void {
+    if (!this.graphics) return;
+
+    const tileW = this.config.tileWidth * this.zoom;
+    const tileH = this.config.tileHeight * this.zoom;
+    const roadWidth = tileW * 0.3; // Road takes 30% of tile width
+
+    this.graphics.fillStyle(asset.color || 0x808080, 1);
+    this.graphics.lineStyle(2 * this.zoom, 0x606060, 1);
+
+    // Draw different road patterns based on type
+    switch (asset.type) {
+      case 'straight-horizontal':
+        // Horizontal road
+        this.graphics.fillRect(screenX - tileW / 2, screenY - roadWidth / 2, tileW, roadWidth);
+        this.graphics.strokeRect(screenX - tileW / 2, screenY - roadWidth / 2, tileW, roadWidth);
+        break;
+      
+      case 'straight-vertical':
+        // Vertical road
+        this.graphics.fillRect(screenX - roadWidth / 2, screenY - tileH / 2, roadWidth, tileH);
+        this.graphics.strokeRect(screenX - roadWidth / 2, screenY - tileH / 2, roadWidth, tileH);
+        break;
+      
+      case 'cross':
+        // Crossroad - both horizontal and vertical
+        this.graphics.fillRect(screenX - tileW / 2, screenY - roadWidth / 2, tileW, roadWidth);
+        this.graphics.fillRect(screenX - roadWidth / 2, screenY - tileH / 2, roadWidth, tileH);
+        this.graphics.strokeRect(screenX - tileW / 2, screenY - roadWidth / 2, tileW, roadWidth);
+        this.graphics.strokeRect(screenX - roadWidth / 2, screenY - tileH / 2, roadWidth, tileH);
+        break;
+      
+      default:
+        // Default: draw a simple rectangle
+        this.graphics.fillRect(screenX - roadWidth / 2, screenY - roadWidth / 2, roadWidth, roadWidth);
+        this.graphics.strokeRect(screenX - roadWidth / 2, screenY - roadWidth / 2, roadWidth, roadWidth);
+    }
+  }
+
+  /**
+   * Draw a tree asset with appropriate style based on tree type
+   */
+  private drawTreeAsset(screenX: number, screenY: number, asset: any): void {
+    if (!this.graphics) return;
+
+    const treeSize = this.config.tileWidth * this.zoom * 0.4;
+    const trunkWidth = treeSize * 0.2;
+    const trunkHeight = treeSize * 0.3;
+    const crownRadius = treeSize * 0.5;
+
+    // Draw tree trunk (brown)
+    this.graphics.fillStyle(0x8B4513, 1);
+    this.graphics.fillRect(
+      screenX - trunkWidth / 2,
+      screenY,
+      trunkWidth,
+      trunkHeight
+    );
+
+    // Draw tree crown (green with variation based on type)
+    this.graphics.fillStyle(asset.color || 0x228B22, 1);
+    this.graphics.lineStyle(1 * this.zoom, 0x006400, 1);
+    
+    // Draw circular crown
+    this.graphics.fillCircle(screenX, screenY - crownRadius / 2, crownRadius);
+    this.graphics.strokeCircle(screenX, screenY - crownRadius / 2, crownRadius);
+  }
+
+  /**
+   * Draw a generic asset (fallback for unknown types)
+   */
+  private drawGenericAsset(screenX: number, screenY: number, asset: any): void {
+    if (!this.graphics) return;
+
+    const size = this.config.tileWidth * this.zoom * 0.5;
+    
+    this.graphics.fillStyle(asset.color || 0xFFFFFF, 1);
+    this.graphics.lineStyle(2 * this.zoom, 0x000000, 1);
+    this.graphics.fillRect(screenX - size / 2, screenY - size / 2, size, size);
+    this.graphics.strokeRect(screenX - size / 2, screenY - size / 2, size, size);
+  }
+
   // Coordinate System Transformations
 
   /**

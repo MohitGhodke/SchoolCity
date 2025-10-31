@@ -34,6 +34,7 @@ import { Subscription } from 'rxjs';
 // Game UI Components
 import { BoundarySelectorComponent } from './ui/boundary-selector.component';
 import { ThemeToggleComponent } from './ui/theme-toggle.component';
+import { AssetSelectorComponent, AssetSelectedEvent } from './ui/asset-selector.component';
 
 // Game Services
 import { GameEngineService, GameConfig } from './services/game-engine.service';
@@ -43,6 +44,7 @@ import { ThemeService } from './services/theme.service';
 import { GameDataService } from './services/game-data.service';
 import { GameEventService } from './services/game-event.service';
 import { EducationHierarchyService } from './services/education-hierarchy.service';
+import { AssetService } from './services/asset.service';
 
 // Game Scene and Constants
 import { MainSceneFactory } from './scenes/main-scene';
@@ -63,7 +65,7 @@ import { GAME_CONSTANTS } from './constants/game-constants';
 @Component({
   selector: 'app-game',
   standalone: true,
-  imports: [CommonModule, BoundarySelectorComponent, ThemeToggleComponent],
+  imports: [CommonModule, BoundarySelectorComponent, ThemeToggleComponent, AssetSelectorComponent],
   template: `
     <!-- Status message overlay -->
     <div class="status-message" [class.visible]="isStatusMessageVisible">
@@ -99,6 +101,9 @@ import { GAME_CONSTANTS } from './constants/game-constants';
     <!-- Boundary paint toolbar -->
     <app-boundary-selector (boundarySelected)="onBoundarySelected($event)"></app-boundary-selector>
 
+    <!-- Asset selector toolbar -->
+    <app-asset-selector (assetSelected)="onAssetSelected($event)"></app-asset-selector>
+
     <!-- School information modal -->
     <div class="school-info-modal" [class.modal-hidden]="!selectedSchool">
       <div class="modal-content">
@@ -131,6 +136,10 @@ export class GameComponent implements OnInit, OnDestroy {
   
   /** Currently selected boundary type for painting */
   selectedBoundary: string | null = null;
+
+  // Asset Properties
+  /** Currently selected asset category and type */
+  selectedAsset: AssetSelectedEvent | null = null;
 
   // Status Message Properties
   /** Current status message to display */
@@ -182,6 +191,7 @@ export class GameComponent implements OnInit, OnDestroy {
     private gameEventService: GameEventService,
     private themeService: ThemeService,
     private gameDataService: GameDataService,
+    private assetService: AssetService,
     private ngZone: NgZone,
     private cdRef: ChangeDetectorRef
   ) {}
@@ -497,7 +507,13 @@ export class GameComponent implements OnInit, OnDestroy {
           backgroundColor
         };
         // Create scene factory function
-        const sceneFactory = MainSceneFactory.createScene(this.gameStateService, this.renderingService, this.educationHierarchyService, this.gameEventService);
+        const sceneFactory = MainSceneFactory.createScene(
+          this.gameStateService, 
+          this.renderingService, 
+          this.educationHierarchyService, 
+          this.gameEventService,
+          this.assetService
+        );
         // Initialize game with the scene factory
         await this.gameEngineService.initializeGame(
           container,
@@ -756,6 +772,32 @@ export class GameComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Handle asset selection from the asset selector UI
+   */
+  onAssetSelected(event: AssetSelectedEvent): void {
+    console.log('onAssetSelected called with:', event);
+    
+    this.selectedAsset = event;
+    
+    // Show status message for asset mode changes
+    if (event.isEraseMode) {
+      this.showStatusMessage('Asset Erase Mode activated');
+    } else if (event.category && event.type) {
+      const assetDef = this.assetService.getAssetDefinition(event.type);
+      this.showStatusMessage(`Asset Mode: ${assetDef?.name || 'Asset'} selected`);
+    } else if (event.category) {
+      this.showStatusMessage(`Asset Category: ${event.category} selected`);
+    } else {
+      this.showStatusMessage('Asset Mode deactivated');
+    }
+    
+    // Sync with Phaser scene
+    if (typeof window !== 'undefined' && (window as any).setSelectedAsset) {
+      (window as any).setSelectedAsset(event);
+    }
+  }
+
+  /**
    * Reset the game to a clean state
    */
   onCleanSlate(): void {
@@ -765,6 +807,8 @@ export class GameComponent implements OnInit, OnDestroy {
     if (municipalityManager) {
       municipalityManager.clearAll();
     }
+    // Also clear all assets
+    this.assetService.clearAllAssets();
     // Auto-save after clean slate
     this.saveGame();
   }

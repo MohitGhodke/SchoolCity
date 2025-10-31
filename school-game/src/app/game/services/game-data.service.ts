@@ -4,6 +4,7 @@ import { GridService, Tile } from './grid.service';
 import { MunicipalityManagerService, MunicipalityDefinition } from './municipality-manager.service';
 import { SchoolService, School } from './school.service';
 import { ThemeService } from './theme.service';
+import { AssetService } from './asset.service';
 
 export interface GameSaveData {
   version: string;
@@ -13,6 +14,7 @@ export interface GameSaveData {
   schools: School[];
   municipalityCounter: number;
   theme: 'light' | 'dark';
+  assets?: any; // Asset data from AssetService
   metadata: {
     gridSize: number;
     totalTiles: number;
@@ -35,7 +37,8 @@ export class GameDataService {
     private gridService: GridService,
     private municipalityManager: MunicipalityManagerService,
     private schoolService: SchoolService,
-    private themeService: ThemeService
+    private themeService: ThemeService,
+    private assetService: AssetService
   ) {}
 
   /**
@@ -184,6 +187,7 @@ export class GameDataService {
     const grid = this.gridService.getGrid();
     const municipalities = this.municipalityManager.getMunicipalities();
     const schools = this.schoolService.getAllSchools();
+    const assets = this.assetService.exportData();
     
     // Calculate metadata
     const totalTiles = grid.length * grid[0].length;
@@ -200,6 +204,7 @@ export class GameDataService {
       schools: schools,
       municipalityCounter: (this.municipalityManager as any).counter || 1,
       theme: this.themeService.getIsDarkMode() ? 'dark' : 'light',
+      assets: assets,
       metadata: {
         gridSize: grid.length,
         totalTiles: totalTiles,
@@ -225,6 +230,11 @@ export class GameDataService {
     
     // Restore schools
     this.schoolService.loadSchools(gameData.schools);
+    
+    // Restore assets if available
+    if (gameData.assets) {
+      this.assetService.importData(gameData.assets);
+    }
     
     // Don't restore theme - let ThemeService handle its own persistence
     // The theme is already loaded from localStorage in ThemeService constructor
