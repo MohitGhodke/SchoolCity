@@ -1,65 +1,118 @@
 # Deployment Status
 
 ## Summary
-The latest code from the `main` branch has been successfully built and prepared for deployment to GitHub Pages.
+The application is configured for automatic deployment to GitHub Pages via GitHub Actions.
 
-## What Was Done
+## Current Deployment Configuration
 
-1. ✅ **Built the Application**: The Angular application was successfully built from the latest `main` branch code with production optimizations
-2. ✅ **Configured Build**: Updated `angular.json` to disable font inlining to support offline builds  
-3. ✅ **Prepared Deployment**: Created deployment commit on `gh-pages` branch locally (commit `24a1493`)
-4. ✅ **Created CI/CD Workflow**: Added `.github/workflows/deploy-to-gh-pages.yml` for automatic future deployments
+### Automated Deployment via GitHub Actions
+A GitHub Actions workflow has been configured to automatically build and deploy the application to GitHub Pages.
 
-## Current Deployment Status
+**Workflow File**: `.github/workflows/deploy-to-gh-pages.yml`
 
-The latest code has been **built** and is ready for deployment, but the `gh-pages` branch still needs to be pushed to GitHub.
+**Triggers**:
+1. **Automatic**: Push to `main` branch
+2. **Automatic**: Push to `copilot/deploy-changes-to-production` branch (for testing)
+3. **Manual**: Workflow dispatch (can be triggered manually from GitHub Actions tab)
 
-### Local gh-pages Branch Status
-- **Latest commit**: `24a1493` - "Deploy latest code from main to gh-pages - 2025-10-31 01:01:59"
-- **Status**: Ready to push
-- **Contains**: Latest build from main branch with all recent features from PR #1 and PR #2
+### How to Deploy
 
-### To Complete Deployment
+#### Option 1: Automatic Deployment (Recommended)
+When changes are pushed to the `main` branch or merged via PR, the deployment workflow automatically:
+1. Checks out the code
+2. Sets up Node.js environment
+3. Installs dependencies
+4. Builds the Angular application with production configuration
+5. Adds .nojekyll file for GitHub Pages compatibility
+6. Deploys to `gh-pages` branch
+7. GitHub Pages automatically serves the updated application
 
-The `gh-pages` branch needs to be pushed to GitHub. There are two options:
+#### Option 2: Manual Deployment via GitHub Actions
+1. Go to the GitHub repository
+2. Navigate to the "Actions" tab
+3. Select "Deploy to GitHub Pages" workflow
+4. Click "Run workflow"
+5. Select the branch you want to deploy from
+6. Click "Run workflow" button
 
-#### Option 1: Manual Push (Immediate)
-Run this command locally (requires push access):
+#### Option 3: Local Deployment Script
+For manual deployment from your local machine:
 ```bash
-git push origin gh-pages
+./deploy.sh
 ```
+This script will:
+- Build the application locally
+- Switch to gh-pages branch
+- Copy build files
+- Commit and push to GitHub
 
-Once pushed, GitHub Pages will automatically deploy the new build (via the existing "pages-build-deployment" workflow).
-
-#### Option 2: Automatic via Workflow (Future)
-After this PR is merged to `main`:
-1. The new GitHub Actions workflow (`.github/workflows/deploy-to-gh-pages.yml`) will automatically:
-   - Build the application
-   - Deploy to `gh-pages`
-   - Trigger GitHub Pages deployment
-
-Alternatively, you can manually trigger the workflow from the GitHub Actions tab.
+**Note**: This requires push access to the repository.
 
 ## Deployment URL
 Once deployed, the application will be available at:
 **https://mohitghodke.github.io/SchoolCity/**
 
-## Changes Included in This Deployment
+## Build Configuration
 
-### From PR #2 (Enhance Painting Experience):
-- Automatic municipality/area detection in painting mode
-- Improved boundary handling
+### Production Build
+The application is built with production optimizations:
+```bash
+cd school-game
+npm run build:prod
+```
 
-### From PR #1 (Fix Municipality Creation Flow):
-- Double-click to start new area/unit functionality
-- Reset events handling for game component
+This command:
+- Enables production mode
+- Sets base href to `/SchoolCity/`
+- Applies Angular optimizations (minification, tree-shaking, etc.)
+- Outputs to `school-game/dist/school-game/browser/`
 
-### Build Improvements:
-- Font inlining disabled for offline build support
-- Automated deployment workflow for future updates
+### Build Output
+- **Location**: `school-game/dist/school-game/browser/`
+- **Main Bundle**: ~232 KB (raw), ~62 KB (gzipped)
+- **Phaser Bundle**: ~1.21 MB (lazy-loaded)
 
-## Files Modified
+## Recent Changes
 
-- `school-game/angular.json` - Added font optimization configuration
-- `.github/workflows/deploy-to-gh-pages.yml` - New automated deployment workflow
-- `gh-pages` branch - Updated with latest production build
+### Deployment Workflow Enhancements
+- ✅ Added support for deployment from feature branch `copilot/deploy-changes-to-production`
+- ✅ Added .nojekyll file creation step to ensure GitHub Pages compatibility
+- ✅ Workflow can be manually triggered for testing
+
+### Application Features
+- Interactive isometric city planning with Phaser.js
+- Educational hierarchy management system
+- Municipal boundary painting and organization
+- Theme support (light/dark modes)
+- Persistent game state with save/load
+
+## Troubleshooting
+
+### Build Warnings
+The build may show a CSS budget warning for `game.component.css`:
+```
+Budget 4.00 kB was not met by 3.92 kB with a total of 7.92 kB
+```
+This is a size warning and doesn't prevent deployment.
+
+### GitHub Pages Not Updating
+1. Check that the workflow ran successfully in the Actions tab
+2. Verify GitHub Pages is enabled in repository settings
+3. Ensure the source is set to `gh-pages` branch
+4. Wait a few minutes for GitHub's CDN to update
+
+### Permission Issues
+The workflow requires:
+- `contents: write` - To push to gh-pages branch
+- `pages: write` - To deploy to GitHub Pages
+- `id-token: write` - For authentication
+
+These should be automatically available via `GITHUB_TOKEN`.
+
+## Next Steps
+
+1. **Merge this PR** to enable automatic deployments from main branch
+2. **Verify deployment** by checking the Actions tab after merge
+3. **Test the application** at the deployment URL
+4. **Future deployments** will happen automatically on every push to main
+
