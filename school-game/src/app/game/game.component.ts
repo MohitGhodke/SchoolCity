@@ -88,9 +88,8 @@ import { GAME_CONSTANTS } from './constants/game-constants';
         <button class="main-btn load-btn" (click)="loadGame()" [disabled]="!hasSavedData" title="Load Game">
           <span class="material-icons-outlined">folder_open</span>
         </button>
-        <button class="main-btn clean-slate-btn" (click)="onCleanSlate()">
+        <button class="main-btn clean-slate-btn" (click)="onCleanSlate()" title="Clean Slate" aria-label="Clean Slate">
           <span class="material-icons-outlined">cleaning_services</span>
-          Clean Slate
         </button>
       </div>
       <app-theme-toggle></app-theme-toggle>
@@ -759,14 +758,19 @@ export class GameComponent implements OnInit, OnDestroy {
    * Reset the game to a clean state
    */
   onCleanSlate(): void {
-    this.gameStateService.cleanSlate();
-    // Also clear the municipality manager data
-    const municipalityManager = (this.renderingService as any).municipalityManager;
-    if (municipalityManager) {
-      municipalityManager.clearAll();
+    // Ask for user confirmation before cleaning slate
+    const confirmed = confirm('Are you sure you want to reset the game? This will clear all progress and cannot be undone.');
+    
+    if (confirmed) {
+      this.gameStateService.cleanSlate();
+      // Also clear the municipality manager data
+      const municipalityManager = (this.renderingService as any).municipalityManager;
+      if (municipalityManager) {
+        municipalityManager.clearAll();
+      }
+      // Auto-save after clean slate
+      this.saveGame();
     }
-    // Auto-save after clean slate
-    this.saveGame();
   }
 
   /**
